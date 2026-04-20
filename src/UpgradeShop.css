@@ -1,0 +1,132 @@
+.upgrade-shop {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.shop-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 0 8px;
+}
+
+.back-button {
+  background: none;
+  border: none;
+  color: #4ecdc4;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.shop-header h2 {
+  color: white;
+  font-size: 20px;
+  margin: 0;
+}
+
+.shop-fuel {
+  color: #e94560;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.upgrades-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.upgrade-card {
+  background: linear-gradient(145deg, #1e1e3a, #16162e);
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-left: 4px solid;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.upgrade-icon {
+  font-size: 40px;
+  min-width: 50px;
+  text-align: center;
+}
+
+.upgrade-info {
+  flex: 1;
+}
+
+.upgrade-name {
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.upgrade-level {
+  color: #a0a0c0;
+  font-size: 12px;
+  background: rgba(255,255,255,0.1);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.upgrade-description {
+  color: #8a8aa3;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.upgrade-cost {
+  color: #ffe66d;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.upgrade-button {
+  background: linear-gradient(135deg, #4ecdc4, #2ecc71);
+  border: none;
+  color: white;
+  font-weight: bold;
+  padding: 10px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  min-width: 90px;
+}
+
+.upgrade-button.cannot-afford {
+  background: #3a3a5a;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.upgrade-button.afford:hover {
+  transform: scale(1.05);
+}
+
+.max-level {
+  color: #ffe66d;
+  font-weight: bold;
+  font-size: 14px;
+  min-width: 90px;
+  text-align: center;
+}
+
+.shop-footer {
+  margin-top: 24px;
+  text-align: center;
+  color: #8a8aa3;
+  font-size: 13px;
+  padding: 12px;
+  background: rgba(78, 205, 196, 0.1);
+  border-radius: 16px;
+}
