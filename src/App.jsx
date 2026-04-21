@@ -117,24 +117,46 @@ function App() {
           const lastSeen = new Date(existingUser.last_seen || existingUser.created_at)
           const minutesPassed = Math.floor((now - lastSeen) / (1000 * 60))
           
-          const newHunger = Math.max(0, (existingUser.hunger || 100) - minutesPassed)
-          const newActivity = Math.max(0, (existingUser.activity || 100) - minutesPassed * 0.5)
+          // Падение не больше 100 и не меньше 0
+          const hungerLoss = Math.min(minutesPassed, 100)
+          const activityLoss = Math.min(minutesPassed * 0.5, 100)
           
-          const { error: updateError } = await supabase
-            .from('users')
-            .update({ 
-              hunger: newHunger, 
-              activity: newActivity,
-              last_seen: now
-            })
-            .eq('id', existingUser.id)
+          const newHunger = Math.max(0, (existingUser.hunger || 100) - hungerLoss)
+          const newActivity = Math.max(0, (existingUser.activity || 100) - activityLoss)
           
-          if (updateError) {
-            console.error('Ошибка обновления:', updateError)
+          console.log('📊 До:', existingUser.hunger, existingUser.activity)
+          console.log('⏱️ Минут прошло:', minutesPassed)
+          console.log('📉 Потери:', hungerLoss, activityLoss)
+          console.log('✅ После:', newHunger, newActivity)
+          
+          // Обновляем в базе ТОЛЬКО если реально что-то изменилось
+          if (newHunger !== existingUser.hunger || newActivity !== existingUser.activity) {
+            const { error: updateError } = await supabase
+              .from('users')
+              .update({ 
+                hunger: newHunger, 
+                activity: newActivity,
+                last_seen: now
+              })
+              .eq('id', existingUser.id)
+            
+            if (updateError) {
+              console.error('Ошибка обновления:', updateError)
+            } else {
+              console.log('💾 Сохранено в базу')
+            }
+            
+            existingUser.hunger = newHunger
+            existingUser.activity = newActivity
+          } else {
+            // Если не изменилось — просто обновляем last_seen
+            await supabase
+              .from('users')
+              .update({ last_seen: now })
+              .eq('id', existingUser.id)
+            
+            console.log('⏭️ Без изменений, обновлён last_seen')
           }
-          
-          existingUser.hunger = newHunger
-          existingUser.activity = newActivity
         }
         
         setDbUser(existingUser)
@@ -188,6 +210,16 @@ function App() {
   const currentLevelFuel = fuel % 500
   const progressPercent = (currentLevelFuel / 500) * 100
 
+
+  const updateLastSeen = async () => {
+    if (dbUser && dbUser.id !== 'local') {
+      await supabase
+        .from('users')
+        .update({ last_seen: new Date() })
+        .eq('id', dbUser.id)
+    }
+  }
+
   const handlePurchase = async () => {
     const amount = Number(purchaseAmount)
     if (amount <= 0) {
@@ -212,6 +244,7 @@ function App() {
     const randomMcc = mccMap[selectedCategory][Math.floor(Math.random() * mccMap[selectedCategory].length)]
     
     const earned = Math.round(amount * category.multiplier)
+    await updateLastSeen()
     const uniqueCode = `MTB-${randomMcc}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
     
     if (!dbUser || dbUser.id === 'local') {
@@ -262,6 +295,7 @@ function App() {
     
     const earned = codeData.earned
     const newFuel = fuel + earned
+    await updateLastSeen()
     
     if (dbUser && dbUser.id !== 'local') {
       await supabase
@@ -307,6 +341,7 @@ function App() {
     
     const newFuel = fuel - cost
     const newLevel = upgrade.level + 1
+    await updateLastSeen()
     
     if (dbUser && dbUser.id !== 'local') {
       await supabase
