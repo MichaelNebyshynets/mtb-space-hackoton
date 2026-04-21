@@ -144,6 +144,8 @@ function App() {
           activity: existingUser.activity || 100
         })
         
+        console.log('🔥 ЗАФИКСИРОВАНО:', existingUser.hunger, existingUser.activity)
+        
         // Загружаем транзакции
         const { data: transactions } = await supabase
           .from('transactions')
@@ -173,35 +175,6 @@ function App() {
           })
           setUpgrades(newUpgrades)
         }
-        
-        // Ежедневный вход (после загрузки всего)
-        const lastLogin = localStorage.getItem('lastLogin')
-        const savedStreak = localStorage.getItem('streak')
-        const today = new Date().toDateString()
-        
-        if (lastLogin !== today) {
-          const yesterday = new Date(Date.now() - 86400000).toDateString()
-          const newStreak = lastLogin === yesterday ? Number(savedStreak) + 1 : 1
-          const bonus = 50 + (newStreak * 10)
-          
-          // Обновляем топливо в базе
-          const newFuel = (existingUser.fuel || 100) + bonus
-          await supabase
-            .from('users')
-            .update({ fuel: newFuel })
-            .eq('id', existingUser.id)
-          
-          setFuel(newFuel)
-          setStreak(newStreak)
-          localStorage.setItem('lastLogin', today)
-          localStorage.setItem('streak', String(newStreak))
-          
-          setTimeout(() => {
-            alert(`🎁 Ежедневный бонус: +${bonus} топлива!\nСерия: ${newStreak} дней`)
-          }, 500)
-        } else {
-          setStreak(Number(savedStreak) || 0)
-        }
       }
       
       setLoading(false)
@@ -214,15 +187,6 @@ function App() {
   const currentLevel = Math.floor(fuel / 500) + 1
   const currentLevelFuel = fuel % 500
   const progressPercent = (currentLevelFuel / 500) * 100
-
-  const updateLastSeen = async () => {
-    if (dbUser && dbUser.id !== 'local') {
-      await supabase
-        .from('users')
-        .update({ last_seen: new Date() })
-        .eq('id', dbUser.id)
-    }
-  }
 
   const handlePurchase = async () => {
     const amount = Number(purchaseAmount)
@@ -249,8 +213,6 @@ function App() {
     
     const earned = Math.round(amount * category.multiplier)
     const uniqueCode = `MTB-${randomMcc}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
-    
-    await updateLastSeen()
     
     if (!dbUser || dbUser.id === 'local') {
       const newTransaction = {
@@ -301,8 +263,6 @@ function App() {
     const earned = codeData.earned
     const newFuel = fuel + earned
     
-    await updateLastSeen()
-    
     if (dbUser && dbUser.id !== 'local') {
       await supabase
         .from('users')
@@ -347,8 +307,6 @@ function App() {
     
     const newFuel = fuel - cost
     const newLevel = upgrade.level + 1
-    
-    await updateLastSeen()
     
     if (dbUser && dbUser.id !== 'local') {
       await supabase
@@ -414,7 +372,6 @@ function App() {
         <h1>🚀 MTB Space Station</h1>
         <p className="user-greeting">
           Привет, {userName}! 
-          {streak > 0 && <span className="streak-badge"> 🔥 {streak} дней</span>}
         </p>
       </header>
       
