@@ -63,142 +63,16 @@ function App() {
           setTelegramUser(user)
         } else {
           setTelegramUser({ id: '999', first_name: 'Гость' })
-          user = { id: '999', first_name: 'Гость' }
         }
         
         tg.ready()
       } else {
         setTelegramUser({ id: '999', first_name: 'Гость (браузер)' })
-        user = { id: '999', first_name: 'Гость' }
       }
       
-      // Работа с Supabase
-      if (user) {
-        const telegramId = String(user.id)
-        
-        let { data: existingUser, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('telegram_id', telegramId)
-          .maybeSingle()
-        
-        if (error) {
-          console.error('Ошибка при поиске пользователя:', error)
-        }
-        
-        const now = new Date()
-        
-        if (!existingUser) {
-          const { data: newUser, error: createError } = await supabase
-            .from('users')
-            .insert({
-              telegram_id: telegramId,
-              first_name: user.first_name || 'Гость',
-              last_name: user.last_name || null,
-              username: user.username || null,
-              fuel: 100,
-              hunger: 100,
-              activity: 100,
-              last_seen: now
-            })
-            .select()
-            .single()
-          
-          if (createError) {
-            console.error('Ошибка при создании пользователя:', createError)
-            setDbUser({ id: 'local', telegram_id: telegramId })
-            setFuel(100)
-            setLoading(false)
-            return
-          }
-          
-          existingUser = newUser
-        } else {
-          const lastSeen = new Date(existingUser.last_seen || existingUser.created_at)
-          const minutesPassed = Math.floor((now - lastSeen) / (1000 * 60))
-          
-          // Падение не больше 100 и не меньше 0
-          const hungerLoss = Math.min(minutesPassed, 100)
-          const activityLoss = Math.min(minutesPassed * 0.5, 100)
-          
-          const newHunger = Math.max(0, (existingUser.hunger || 100) - hungerLoss)
-          const newActivity = Math.max(0, (existingUser.activity || 100) - activityLoss)
-          
-          console.log('📊 До:', existingUser.hunger, existingUser.activity)
-          console.log('⏱️ Минут прошло:', minutesPassed)
-          console.log('📉 Потери:', hungerLoss, activityLoss)
-          console.log('✅ После:', newHunger, newActivity)
-          
-          // Обновляем в базе ТОЛЬКО если реально что-то изменилось
-          if (newHunger !== existingUser.hunger || newActivity !== existingUser.activity) {
-            const { error: updateError } = await supabase
-              .from('users')
-              .update({ 
-                hunger: newHunger, 
-                activity: newActivity,
-                last_seen: now
-              })
-              .eq('id', existingUser.id)
-            
-            if (updateError) {
-              console.error('Ошибка обновления:', updateError)
-            } else {
-              console.log('💾 Сохранено в базу')
-            }
-            
-            existingUser.hunger = newHunger
-            existingUser.activity = newActivity
-          } else {
-            // Если не изменилось — просто обновляем last_seen
-            await supabase
-              .from('users')
-              .update({ last_seen: now })
-              .eq('id', existingUser.id)
-            
-            console.log('⏭️ Без изменений, обновлён last_seen')
-          }
-        }
-        
-        setDbUser(existingUser)
-        setFuel(existingUser.fuel || 100)
-        setCharacter({
-          hunger: existingUser.hunger || 100,
-          activity: existingUser.activity || 100
-        })
-        
-        console.log('🔥 ЗАФИКСИРОВАНО:', existingUser.hunger, existingUser.activity)
-        
-        // Загружаем транзакции
-        const { data: transactions } = await supabase
-          .from('transactions')
-          .select('*')
-          .eq('user_id', existingUser.id)
-          .order('created_at', { ascending: false })
-          .limit(20)
-        
-        setBankTransactions(transactions || [])
-        
-        // Загружаем прокачки
-        const { data: dbUpgrades } = await supabase
-          .from('upgrades')
-          .select('*')
-          .eq('user_id', existingUser.id)
-        
-        if (dbUpgrades && dbUpgrades.length > 0) {
-          const newUpgrades = { 
-            armor: { level: 1, name: 'Броня', baseCost: 100 }, 
-            engine: { level: 1, name: 'Двигатель', baseCost: 200 }, 
-            scanner: { level: 1, name: 'Сканер', baseCost: 150 } 
-          }
-          dbUpgrades.forEach(u => {
-            if (newUpgrades[u.upgrade_id]) {
-              newUpgrades[u.upgrade_id].level = u.level
-            }
-          })
-          setUpgrades(newUpgrades)
-        }
-      }
-      
+      // ЗАГЛУШКА — всегда 100
+      setFuel(100)
+      setCharacter({ hunger: 100, activity: 100 })
       setLoading(false)
     }
     
