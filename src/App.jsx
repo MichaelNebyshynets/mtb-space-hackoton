@@ -32,8 +32,6 @@ function App() {
     activity: 100
   })
 
-  // Достижения и ежедневный вход
-  const [dailyClaimed, setDailyClaimed] = useState(false)
   const [streak, setStreak] = useState(0)
 
   const categories = {
@@ -111,19 +109,26 @@ function App() {
             console.error('Ошибка при создании пользователя:', createError)
             setDbUser({ id: 'local', telegram_id: telegramId })
             setFuel(100)
-            setCharacter({ hunger: 100, activity: 100 })
+            // НЕ трогаем character
             setLoading(false)
             return
           }
           
           existingUser = newUser
         } else {
+          // Вычисляем сколько времени прошло с последнего визита
           const lastSeen = new Date(existingUser.last_seen || existingUser.created_at)
           const minutesPassed = Math.floor((now - lastSeen) / (1000 * 60))
+          
+          console.log('⏱️ Прошло минут:', minutesPassed)
+          console.log('📊 До обновления:', { hunger: existingUser.hunger, activity: existingUser.activity })
           
           const newHunger = Math.max(0, (existingUser.hunger || 100) - minutesPassed)
           const newActivity = Math.max(0, (existingUser.activity || 100) - minutesPassed * 0.5)
           
+          console.log('✅ После обновления:', { newHunger, newActivity })
+          
+          // Обновляем в базе
           const { error: updateError } = await supabase
             .from('users')
             .update({ 
@@ -148,6 +153,8 @@ function App() {
           activity: existingUser.activity || 100
         })
         
+        console.log('🔥 УСТАНОВЛЕНО ИЗ БАЗЫ:', { hunger: existingUser.hunger, activity: existingUser.activity })
+        
         // Загружаем транзакции
         const { data: transactions } = await supabase
           .from('transactions')
@@ -165,7 +172,7 @@ function App() {
           .eq('user_id', existingUser.id)
         
         if (dbUpgrades && dbUpgrades.length > 0) {
-          const newUpgrades = { ...upgrades }
+          const newUpgrades = { armor: { level: 1, name: 'Броня', baseCost: 100 }, engine: { level: 1, name: 'Двигатель', baseCost: 200 }, scanner: { level: 1, name: 'Сканер', baseCost: 150 } }
           dbUpgrades.forEach(u => {
             if (newUpgrades[u.upgrade_id]) {
               newUpgrades[u.upgrade_id].level = u.level
@@ -189,17 +196,16 @@ function App() {
         setStreak(newStreak)
         localStorage.setItem('lastLogin', today)
         localStorage.setItem('streak', String(newStreak))
-        setDailyClaimed(true)
         
         setTimeout(() => {
           alert(`🎁 Ежедневный бонус: +${bonus} топлива!\nСерия: ${newStreak} дней`)
         }, 500)
       } else {
         setStreak(Number(savedStreak) || 0)
-        setDailyClaimed(true)
       }
       
       setLoading(false)
+      console.log('✅ ЗАГРУЗКА ЗАВЕРШЕНА')
     }
     
     initApp()
