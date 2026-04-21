@@ -89,7 +89,6 @@ function App() {
         const now = new Date()
         
         if (!existingUser) {
-          // Создаём нового пользователя
           const { data: newUser, error: createError } = await supabase
             .from('users')
             .insert({
@@ -109,26 +108,18 @@ function App() {
             console.error('Ошибка при создании пользователя:', createError)
             setDbUser({ id: 'local', telegram_id: telegramId })
             setFuel(100)
-            // НЕ трогаем character
             setLoading(false)
             return
           }
           
           existingUser = newUser
         } else {
-          // Вычисляем сколько времени прошло с последнего визита
           const lastSeen = new Date(existingUser.last_seen || existingUser.created_at)
           const minutesPassed = Math.floor((now - lastSeen) / (1000 * 60))
-          
-          console.log('⏱️ Прошло минут:', minutesPassed)
-          console.log('📊 До обновления:', { hunger: existingUser.hunger, activity: existingUser.activity })
           
           const newHunger = Math.max(0, (existingUser.hunger || 100) - minutesPassed)
           const newActivity = Math.max(0, (existingUser.activity || 100) - minutesPassed * 0.5)
           
-          console.log('✅ После обновления:', { newHunger, newActivity })
-          
-          // Обновляем в базе
           const { error: updateError } = await supabase
             .from('users')
             .update({ 
@@ -153,8 +144,6 @@ function App() {
           activity: existingUser.activity || 100
         })
         
-        console.log('🔥 УСТАНОВЛЕНО ИЗ БАЗЫ:', { hunger: existingUser.hunger, activity: existingUser.activity })
-        
         // Загружаем транзакции
         const { data: transactions } = await supabase
           .from('transactions')
@@ -172,7 +161,11 @@ function App() {
           .eq('user_id', existingUser.id)
         
         if (dbUpgrades && dbUpgrades.length > 0) {
-          const newUpgrades = { armor: { level: 1, name: 'Броня', baseCost: 100 }, engine: { level: 1, name: 'Двигатель', baseCost: 200 }, scanner: { level: 1, name: 'Сканер', baseCost: 150 } }
+          const newUpgrades = { 
+            armor: { level: 1, name: 'Броня', baseCost: 100 }, 
+            engine: { level: 1, name: 'Двигатель', baseCost: 200 }, 
+            scanner: { level: 1, name: 'Сканер', baseCost: 150 } 
+          }
           dbUpgrades.forEach(u => {
             if (newUpgrades[u.upgrade_id]) {
               newUpgrades[u.upgrade_id].level = u.level
@@ -180,32 +173,38 @@ function App() {
           })
           setUpgrades(newUpgrades)
         }
-      }
-      
-      // Ежедневный вход
-      const lastLogin = localStorage.getItem('lastLogin')
-      const savedStreak = localStorage.getItem('streak')
-      const today = new Date().toDateString()
-      
-      if (lastLogin !== today) {
-        const yesterday = new Date(Date.now() - 86400000).toDateString()
-        const newStreak = lastLogin === yesterday ? Number(savedStreak) + 1 : 1
-        const bonus = 50 + (newStreak * 10)
         
-        setFuel(prev => prev + bonus)
-        setStreak(newStreak)
-        localStorage.setItem('lastLogin', today)
-        localStorage.setItem('streak', String(newStreak))
+        // Ежедневный вход (после загрузки всего)
+        const lastLogin = localStorage.getItem('lastLogin')
+        const savedStreak = localStorage.getItem('streak')
+        const today = new Date().toDateString()
         
-        setTimeout(() => {
-          alert(`🎁 Ежедневный бонус: +${bonus} топлива!\nСерия: ${newStreak} дней`)
-        }, 500)
-      } else {
-        setStreak(Number(savedStreak) || 0)
+        if (lastLogin !== today) {
+          const yesterday = new Date(Date.now() - 86400000).toDateString()
+          const newStreak = lastLogin === yesterday ? Number(savedStreak) + 1 : 1
+          const bonus = 50 + (newStreak * 10)
+          
+          // Обновляем топливо в базе
+          const newFuel = (existingUser.fuel || 100) + bonus
+          await supabase
+            .from('users')
+            .update({ fuel: newFuel })
+            .eq('id', existingUser.id)
+          
+          setFuel(newFuel)
+          setStreak(newStreak)
+          localStorage.setItem('lastLogin', today)
+          localStorage.setItem('streak', String(newStreak))
+          
+          setTimeout(() => {
+            alert(`🎁 Ежедневный бонус: +${bonus} топлива!\nСерия: ${newStreak} дней`)
+          }, 500)
+        } else {
+          setStreak(Number(savedStreak) || 0)
+        }
       }
       
       setLoading(false)
-      console.log('✅ ЗАГРУЗКА ЗАВЕРШЕНА')
     }
     
     initApp()
@@ -216,7 +215,6 @@ function App() {
   const currentLevelFuel = fuel % 500
   const progressPercent = (currentLevelFuel / 500) * 100
 
-  // Обновление last_seen при действиях
   const updateLastSeen = async () => {
     if (dbUser && dbUser.id !== 'local') {
       await supabase
@@ -226,7 +224,6 @@ function App() {
     }
   }
 
-  // Совершить покупку
   const handlePurchase = async () => {
     const amount = Number(purchaseAmount)
     if (amount <= 0) {
@@ -295,7 +292,6 @@ function App() {
     setPurchaseAmount('')
   }
 
-  // Использовать код
   const handleBankCode = async (codeData) => {
     if (codeData.used) {
       alert('Этот код уже использован!')
@@ -340,7 +336,6 @@ function App() {
     setShowBankWidget(false)
   }
 
-  // Прокачка
   const handleUpgrade = async (upgradeId) => {
     const upgrade = upgrades[upgradeId]
     const cost = upgrade.baseCost * upgrade.level
