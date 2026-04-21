@@ -118,19 +118,13 @@ function App() {
           
           existingUser = newUser
         } else {
-          // Вычисляем сколько времени прошло с последнего визита
           const lastSeen = new Date(existingUser.last_seen || existingUser.created_at)
           const minutesPassed = Math.floor((now - lastSeen) / (1000 * 60))
           
-          // Уменьшаем голод и активность
-          const hungerLoss = Math.min(existingUser.hunger || 100, minutesPassed * 1)
-          const activityLoss = Math.min(existingUser.activity || 100, minutesPassed * 0.5)
+          const newHunger = Math.max(0, (existingUser.hunger || 100) - minutesPassed)
+          const newActivity = Math.max(0, (existingUser.activity || 100) - minutesPassed * 0.5)
           
-          const newHunger = Math.max(0, (existingUser.hunger || 100) - hungerLoss)
-          const newActivity = Math.max(0, (existingUser.activity || 100) - activityLoss)
-          
-          // Обновляем в базе
-          await supabase
+          const { error: updateError } = await supabase
             .from('users')
             .update({ 
               hunger: newHunger, 
@@ -138,6 +132,10 @@ function App() {
               last_seen: now
             })
             .eq('id', existingUser.id)
+          
+          if (updateError) {
+            console.error('Ошибка обновления:', updateError)
+          }
           
           existingUser.hunger = newHunger
           existingUser.activity = newActivity
