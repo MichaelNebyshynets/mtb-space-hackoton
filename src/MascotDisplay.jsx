@@ -55,9 +55,9 @@ function MascotDisplay({ mascot, level, size = 'large' }) {
         alt={mascotNames[mascot]} 
         className="mascot-image"
       />
-      <p className="mascot-name">
+      {/* <p className="mascot-name">
         {mascotNames[mascot]} • Ур. {level}
-      </p>
+      </p> */}
     </div>
   )
 }

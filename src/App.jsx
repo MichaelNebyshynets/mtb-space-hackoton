@@ -74,6 +74,9 @@ function App() {
 
   // Переключение активного маскота
   const switchMascot = async (mascotId) => {
+
+    const userId = session?.user?.id || dbUser?.id
+    if (!userId) return
     // Снимаем active со всех
     await supabase
       .from('user_mascots')
@@ -154,34 +157,98 @@ function App() {
 
     
     // Загрузка данных пользователя из Supabase
-    useEffect(() => {
-      if (!session) {
-        setLoading(false)
-        return
+useEffect(() => {
+  if (!session) {
+    setLoading(false)
+    return
+  }
+  
+  const loadUserData = async () => {
+    const userId = session.id  // ← используем ID из сессии
+    
+    console.log('🔑 Загружаем данные для userId:', userId)
+    
+    // 1. Загружаем или создаём пользователя в таблице users
+    let { data: userData } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle()
+    
+    if (!userData) {
+      console.log('🆕 Создаём пользователя в таблице users')
+      const { data: newUser } = await supabase
+        .from('users')
+        .insert({
+          id: userId,
+          phone: session.phone || 'unknown',
+          mascot: 'lion',
+          fuel: 100,
+          hunger: 100,
+          activity: 100,
+          last_seen: new Date()
+        })
+        .select()
+        .single()
+      
+      userData = newUser
+    }
+    
+    setDbUser(userData)
+    setFuel(userData.fuel || 100)
+    setCharacter({
+      hunger: userData.hunger || 100,
+      activity: userData.activity || 100
+    })
+    
+    // 2. Загружаем маскотов
+    let { data: mascots } = await supabase
+      .from('user_mascots')
+      .select('*')
+      .eq('user_id', userId)
+      .order('mascot_id')
+    
+    console.log('📦 Маскоты из базы:', mascots)
+    
+    // 3. Если маскотов нет — создаём ПРЯМО СЕЙЧАС
+    if (!mascots || mascots.length === 0) {
+      console.log('🆕 СОЗДАЁМ МАСКОТОВ')
+      
+      const mascotList = ['lion', 'eagle', 'bear', 'stork', 'cat']
+      for (const m of mascotList) {
+        await supabase.from('user_mascots').insert({
+          user_id: userId,
+          mascot_id: m,
+          level: 1,
+          experience: 0,
+          is_active: m === 'lion'
+        })
       }
       
-      const loadUserData = async () => {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.id)
-          .maybeSingle()
-        
-        if (userData) {
-          setDbUser(userData)
-          setFuel(userData.fuel || 100)
-          setCharacter({
-            hunger: userData.hunger || 100,
-            activity: userData.activity || 100
-          })
-          // ... загрузи остальные данные
-        }
-        
-        setLoading(false)
-      }
+      // Загружаем снова
+      const { data: newMascots } = await supabase
+        .from('user_mascots')
+        .select('*')
+        .eq('user_id', userId)
+        .order('mascot_id')
       
-      loadUserData()
-    }, [session])
+      mascots = newMascots
+    }
+    
+    console.log('✅ Итоговые маскоты:', mascots)
+    setUserMascots(mascots || [])
+    
+    const active = mascots?.find(m => m.is_active) || mascots?.[0]
+    if (active) {
+      console.log('⭐ Активный маскот:', active)
+      setActiveMascot(active)
+    }
+    
+    setLoading(false)
+  }
+  
+  loadUserData()
+}, [session])
 
     // Если не залогинен — показываем PhoneAuth
     if (!session) {
@@ -466,7 +533,11 @@ function App() {
   }
 
   const handleUpgrade = async (mascotId) => {
+    const userId = session?.user?.id || dbUser?.id
     const mascot = userMascots.find(m => m.mascot_id === mascotId)
+    
+    if (!mascot || !userId) return
+    
     const cost = mascot.level * 100 + 50
     
     if (fuel < cost) {

@@ -1,18 +1,19 @@
 import './MascotSwitcher.css'
 
-// Картинки первого уровня для отображения в списке
 const mascotImages = {
-  lion: '/assets/mascots/lion-level-1.png',
-  eagle: '/assets/mascots/eagle-level-1.png',
-  bison: '/assets/mascots/bear-level-1.png',
-  stork: '/assets/mascots/stork-level-1.png',
-  cat: '/assets/mascots/cat-level-1.png',
+  lion: '/mascots/lion-level-1.png',
+  eagle: '/mascots/eagle-level-1.png',
+  bear: '/mascots/bear-level-1.png',
+  bison: '/mascots/bear-level-1.png',  // fallback
+  stork: '/mascots/stork-level-1.png',
+  cat: '/mascots/cat-level-1.png',
 }
 
 const mascotInfo = {
   lion: { name: 'Лев', color: '#ffa502' },
   eagle: { name: 'Орёл', color: '#4ecdc4' },
-  bison: { name: 'Медведь', color: '#8B4513' },
+  bear: { name: 'Медведь', color: '#8B4513' },
+  bison: { name: 'Зубр', color: '#8B4513' },
   stork: { name: 'Аист', color: '#ff6b6b' },
   cat: { name: 'Кот', color: '#9b59b6' },
 }
@@ -26,7 +27,10 @@ function MascotSwitcher({ mascots, activeMascotId, onSwitch, onClose }) {
         
         <div className="mascot-list">
           {mascots.map(m => {
-            const info = mascotInfo[m.mascot_id]
+            // Защита — если маскот не найден, используем дефолт
+            const info = mascotInfo[m.mascot_id] || { name: m.mascot_id, color: '#888' }
+            const image = mascotImages[m.mascot_id] || '/mascots/lion-level-1.png'
+            
             return (
               <div
                 key={m.mascot_id}
@@ -34,15 +38,8 @@ function MascotSwitcher({ mascots, activeMascotId, onSwitch, onClose }) {
                 style={{ borderColor: m.is_active ? info.color : 'transparent' }}
                 onClick={() => onSwitch(m.mascot_id)}
               >
-                <div 
-                  className="mascot-item-icon" 
-                  style={{ backgroundColor: info.color + '20' }}
-                >
-                  <img 
-                    src={mascotImages[m.mascot_id]} 
-                    alt={info.name}
-                    className="mascot-switcher-image"
-                  />
+                <div className="mascot-item-icon" style={{ backgroundColor: info.color + '20' }}>
+                  <img src={image} alt={info.name} className="mascot-switcher-image" />
                 </div>
                 <div className="mascot-item-info">
                   <div className="mascot-item-name">{info.name}</div>
