@@ -136,22 +136,20 @@ async function processMatches() {
         const hadMatches = game.checkMatches();
         if (!hadMatches) break;
         
-        renderBoard();
-        
-        // Анимация гравитации
+        // Гравитация
         const moves = game.gravitateAnimated();
         if (moves.length > 0) {
             await animateGravity(moves);
         }
         
-        // Анимация новых камней
+        // Новые камни
         const newCells = game.fillAnimated();
         if (newCells.length > 0) {
             await animateNewCells(newCells);
         }
         
         renderBoard();
-        await sleep(100);
+        await sleep(50);
     }
     
     renderBoard();
