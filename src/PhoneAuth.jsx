@@ -31,35 +31,44 @@ function PhoneAuth({ onLogin }) {
   }
 
   // Заглушка проверки кода
-  const handleVerifyCode = async (e) => {
+    const handleVerifyCode = async (e) => {
     e.preventDefault()
     if (code !== '123456') {
-      setError('Неверный код. Используйте 123456')
-      return
+        setError('Неверный код. Используйте 123456')
+        return
     }
     
     setError('')
     const formattedPhone = formatPhone(phone)
-    const fakeUser = {
-      id: 'user-' + formattedPhone.replace(/\D/g, ''),
-      phone: formattedPhone
-    }
     
+    // Генерируем UUID из номера
+    const generateUUID = (phone) => {
+        const hash = phone.split('').reduce((acc, char) => {
+        return ((acc << 5) - acc) + char.charCodeAt(0) | 0
+        }, 0)
+        const hex = Math.abs(hash).toString(16).padStart(32, '0').slice(0, 32)
+        return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20,32)}`
+    }
+
+    const fakeUser = {
+        id: generateUUID(formattedPhone),
+        phone: formattedPhone
+    }
+
     // Проверяем, есть ли уже такой пользователь
     const { data: existingUser } = await supabase
-      .from('users')
-      .select('*')
-      .eq('phone', formattedPhone)
-      .maybeSingle()
-    
-    if (existingUser) {
-      onLogin(fakeUser)
-    } else {
-      setTempUser(fakeUser)
-      setStep('mascot')
-    }
-  }
+        .from('users')
+        .select('*')
+        .eq('phone', formattedPhone)
+        .maybeSingle()
 
+    if (existingUser) {
+        onLogin(fakeUser)
+    } else {
+        setTempUser(fakeUser)
+        setStep('mascot')
+    }
+    }
   // Завершить регистрацию
   const handleComplete = async () => {
     setLoading(true)
