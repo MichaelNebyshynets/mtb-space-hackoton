@@ -7,9 +7,13 @@ import Character from './Character'
 import PhoneAuth from './PhoneAuth'
 import MascotSwitcher from './MascotSwitcher'
 import BalanceCard from './BalanceCard'
+import GameScreen from './GameScreen'
 import { supabase } from './supabase'
 
 function App() {
+
+
+  const [showGame, setShowGame] = useState(false)
 
   const [balance, setBalance] = useState(1247.50)  // реальный счёт
   const [loyaltyPoints, setLoyaltyPoints] = useState(420)  // баллы для прокачек
@@ -35,6 +39,27 @@ function App() {
 
   const [userMascots, setUserMascots] = useState([])
   const [activeMascot, setActiveMascot] = useState(null)
+
+
+  const startGame = () => {
+    if (battery <= 0) {
+      alert('Недостаточно батареек! Совершите транзакцию.')
+      return
+    }
+    setShowGame(true)
+  }
+
+  // Обработка конца игры
+  const handleGameEnd = (score) => {
+    setBattery(prev => prev - 1)  // Тратим 1 батарейку
+    setShowGame(false)
+    
+    // Награда за игру
+    const earnedLoyalty = Math.floor(score / 10) + 5  // 5 базово + за очки
+    setLoyaltyPoints(prev => prev + earnedLoyalty)
+    
+    alert(`🎮 Игра окончена! Счёт: ${score}\n+${earnedLoyalty} ⭐ баллов лояльности`)
+  }
 
 
   const calculateBattery = (amount) => {
@@ -643,8 +668,15 @@ useEffect(() => {
               maxBattery={maxBattery}
             />
             
+
+
             <BalanceCard balance={balance}/>
-            
+            <div className="loyalty-section">
+              <span className="loyalty-icon">⭐</span>
+              <span className="loyalty-value">{loyaltyPoints}</span>
+              <span className="loyalty-label">баллов</span>
+            </div>
+                        
             <div className="level-section">
               <div className="level-header">
                 <span className="level-badge">⭐ Уровень станции {currentLevel}</span>
@@ -670,6 +702,10 @@ useEffect(() => {
             
             <button className="bank-nav-button" onClick={() => setShowBankWidget(true)}>
               🏦 Мои операции (МТБанк)
+            </button>
+
+            <button className="game-nav-button" onClick={startGame}>
+              🎮 Играть (1 🔋)
             </button>
             
             <button className="shop-nav-button" onClick={() => setCurrentScreen('shop')}>
@@ -762,6 +798,14 @@ useEffect(() => {
           activeMascotId={activeMascot?.mascot_id}
           onSwitch={switchMascot}
           onClose={() => setShowMascotSwitcher(false)}
+        />
+      )}
+
+      {showGame && (
+        <GameScreen 
+          battery={battery}
+          onGameEnd={handleGameEnd}
+          onClose={() => setShowGame(false)}
         />
       )}
     </div>
