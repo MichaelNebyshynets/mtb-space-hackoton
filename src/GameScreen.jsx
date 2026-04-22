@@ -35,7 +35,7 @@ function GameScreen({ battery, onGameEnd, onClose }) {
     <div className="game-screen-overlay">
       <div className="game-screen">
         <button className="game-close" onClick={onClose}>✕</button>
-        <h3>🎮 Три в ря</h3>
+        <h3>🎮 Три в ряд</h3>
         <iframe
           ref={iframeRef}
           src="/game/index.html"
