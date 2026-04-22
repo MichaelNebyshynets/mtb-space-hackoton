@@ -18,29 +18,29 @@ const getEvolutionStage = (level) => {
 // Картинки для всех уровней
 const mascotAssets = {
   lion: {
-    1: '/assets/mascots/lion-level-1.png',
-    2: '/assets/mascots/lion-level-2.png',
-    3: '/assets/mascots/lion-level-3.png',
+    1: '/mascots/lion-level-1.png',
+    2: '/mascots/lion-level-2.png',
+    3: '/mascots/lion-level-3.png',
   },
   eagle: {
-    1: '/assets/mascots/eagle-level-1.png',
-    2: '/assets/mascots/eagle-level-2.png',
-    3: '/assets/mascots/eagle-level-3.png',
+    1: '/mascots/eagle-level-1.png',
+    2: '/mascots/eagle-level-2.png',
+    3: '/mascots/eagle-level-3.png',
   },
   bison: {
-    1: '/assets/mascots/bear-level-1.png',
-    2: '/assets/mascots/bear-level-2.png',
-    3: '/assets/mascots/bear-level-3.png',
+    1: '/mascots/bear-level-1.png',
+    2: '/mascots/bear-level-2.png',
+    3: '/mascots/bear-level-3.png',
   },
   stork: {
-    1: '/assets/mascots/stork-level-1.png',
-    2: '/assets/mascots/stork-level-2.png',
-    3: '/assets/mascots/stork-level-3.png',
+    1: '/mascots/stork-level-1.png',
+    2: '/mascots/stork-level-2.png',
+    3: '/mascots/stork-level-3.png',
   },
   cat: {
-    1: '/assets/mascots/cat-level-1.png',
-    2: '/assets/mascots/cat-level-2.png',
-    3: '/assets/mascots/cat-level-3.png',
+    1: '/mascots/cat-level-1.png',
+    2: '/mascots/cat-level-2.png',
+    3: '/mascots/cat-level-3.png',
   },
 }
 

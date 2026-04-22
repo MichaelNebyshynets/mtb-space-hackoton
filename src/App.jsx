@@ -434,9 +434,9 @@ function App() {
     setShowBankWidget(false)
   }
 
-  const handleUpgrade = async (upgradeId) => {
-    const upgrade = upgrades[upgradeId]
-    const cost = upgrade.baseCost * upgrade.level
+  const handleUpgrade = async (mascotId) => {
+    const mascot = userMascots.find(m => m.mascot_id === mascotId)
+    const cost = mascot.level * 100 + 50
     
     if (fuel < cost) {
       alert('Недостаточно топлива')
@@ -444,53 +444,26 @@ function App() {
     }
     
     const newFuel = fuel - cost
-    const newLevel = upgrade.level + 1
-    await updateLastSeen()
+    const newLevel = mascot.level + 1
     
-    if (dbUser && dbUser.id !== 'local') {
-      await supabase
-        .from('users')
-        .update({ fuel: newFuel })
-        .eq('id', dbUser.id)
-      
-      const { data: existing } = await supabase
-        .from('upgrades')
-        .select('*')
-        .eq('user_id', dbUser.id)
-        .eq('upgrade_id', upgradeId)
-        .maybeSingle()
-      
-      if (existing) {
-        await supabase
-          .from('upgrades')
-          .update({ level: newLevel })
-          .eq('id', existing.id)
-      } else {
-        await supabase
-          .from('upgrades')
-          .insert({
-            user_id: dbUser.id,
-            upgrade_id: upgradeId,
-            level: newLevel
-          })
-      }
-    }
+    // Обновляем в Supabase
+    await supabase
+      .from('user_mascots')
+      .update({ level: newLevel })
+      .eq('user_id', dbUser.id)
+      .eq('mascot_id', mascotId)
     
+    // Обновляем локально
     setFuel(newFuel)
-    setUpgrades(prev => ({
-      ...prev,
-      [upgradeId]: { ...prev[upgradeId], level: newLevel }
-    }))
+    setUserMascots(prev => prev.map(m => 
+      m.mascot_id === mascotId ? { ...m, level: newLevel } : m
+    ))
     
-    const newActivity = Math.min(100, character.activity + 15)
-    setCharacter(prev => ({ ...prev, activity: newActivity }))
-    
-    if (dbUser && dbUser.id !== 'local') {
-      await supabase
-        .from('users')
-        .update({ activity: newActivity })
-        .eq('id', dbUser.id)
+    if (activeMascot?.mascot_id === mascotId) {
+      setActiveMascot(prev => ({ ...prev, level: newLevel }))
     }
+    
+    alert(`🎉 ${mascotInfo[mascotId].name} достиг уровня ${newLevel}!`)
   }
 
   if (loading) {

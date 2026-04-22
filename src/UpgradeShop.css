@@ -33,92 +33,134 @@
   font-size: 18px;
 }
 
-.upgrades-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.upgrade-card {
-  background: linear-gradient(145deg, #1e1e3a, #16162e);
-  border-radius: 20px;
-  padding: 16px;
+.active-mascot-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
+  padding: 16px;
+  background: linear-gradient(145deg, #1e1e3a, #16162e);
+  border-radius: 20px;
+  margin-bottom: 16px;
   border-left: 4px solid;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
-.upgrade-icon {
-  font-size: 40px;
-  min-width: 50px;
+.mascot-shop-icon {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+}
+
+.mascot-shop-details h3 {
+  color: white;
+  margin: 0 0 4px 0;
+}
+
+.mascot-shop-stats {
+  display: flex;
+  gap: 16px;
+  color: #a0a0c0;
+  font-size: 14px;
+}
+
+.mascot-description {
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  margin-bottom: 20px;
+}
+
+.mascot-description p {
+  color: #c0c0e0;
+  font-size: 14px;
+  margin: 0;
   text-align: center;
 }
 
-.upgrade-info {
+.upgrade-main-card {
+  background: linear-gradient(145deg, #1e1e3a, #16162e);
+  border-radius: 24px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-left: 4px solid;
+  margin-bottom: 20px;
+}
+
+.upgrade-main-icon {
+  font-size: 48px;
+  min-width: 60px;
+  text-align: center;
+}
+
+.upgrade-main-info {
   flex: 1;
 }
 
-.upgrade-name {
+.upgrade-main-title {
   color: white;
-  font-weight: 600;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  font-weight: bold;
+  font-size: 18px;
   margin-bottom: 4px;
 }
 
-.upgrade-level {
-  color: #a0a0c0;
-  font-size: 12px;
-  background: rgba(255,255,255,0.1);
-  padding: 2px 8px;
-  border-radius: 12px;
+.upgrade-main-desc {
+  color: #4ecdc4;
+  font-size: 14px;
+  margin-bottom: 4px;
 }
 
-.upgrade-description {
-  color: #8a8aa3;
-  font-size: 12px;
-  margin-bottom: 6px;
-}
-
-.upgrade-cost {
+.upgrade-main-bonus {
   color: #ffe66d;
   font-size: 13px;
-  font-weight: 500;
+  margin-bottom: 8px;
 }
 
-.upgrade-button {
+.upgrade-main-cost {
+  color: #e94560;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.upgrade-main-button {
   background: linear-gradient(135deg, #4ecdc4, #2ecc71);
   border: none;
   color: white;
   font-weight: bold;
-  padding: 10px 16px;
-  border-radius: 12px;
+  padding: 14px 20px;
+  border-radius: 16px;
   cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
-  min-width: 90px;
+  font-size: 16px;
+  min-width: 110px;
 }
 
-.upgrade-button.cannot-afford {
+.upgrade-main-button.cannot-afford {
   background: #3a3a5a;
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.upgrade-button.afford:hover {
-  transform: scale(1.05);
+.max-level-card {
+  background: linear-gradient(145deg, #1e1e3a, #16162e);
+  border-radius: 24px;
+  padding: 30px 20px;
+  text-align: center;
+  border: 2px solid #ffe66d;
+  margin-bottom: 20px;
 }
 
-.max-level {
+.max-level-icon {
+  font-size: 60px;
+  margin-bottom: 12px;
+}
+
+.max-level-card h3 {
   color: #ffe66d;
-  font-weight: bold;
-  font-size: 14px;
-  min-width: 90px;
-  text-align: center;
+  margin-bottom: 8px;
+}
+
+.max-level-card p {
+  color: #a0a0c0;
 }
 
 .shop-footer {

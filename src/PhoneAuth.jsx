@@ -114,6 +114,17 @@ function PhoneAuth({ onLogin }) {
         setLoading(false)
     }
     }
+    
+
+    const handleBack = () => {
+        if (step === 'code') {
+            setStep('phone')
+            setCode('')
+        } else if (step === 'mascot') {
+            setStep('code')
+        }
+        setError('')
+    }
 
   if (step === 'mascot') {
     return (
