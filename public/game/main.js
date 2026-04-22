@@ -55,7 +55,6 @@ function renderBoard() {
     }
 }
 
-// Свайпы
 function onTouchStart(e) {
     if (game.isLosed() || isAnimating) return;
     const touch = e.touches[0];
@@ -129,73 +128,25 @@ function onCellClick(e) {
     }
 }
 
-async function processMatches() {
+function processMatches() {
+    if (isAnimating) return;
     isAnimating = true;
     
-    while (true) {
-        const hadMatches = game.checkMatches();
-        if (!hadMatches) break;
-        
-        // Гравитация
-        const moves = game.gravitateAnimated();
-        if (moves.length > 0) {
-            await animateGravity(moves);
-        }
-        
-        // Новые камни
-        const newCells = game.fillAnimated();
-        if (newCells.length > 0) {
-            await animateNewCells(newCells);
-        }
-        
-        renderBoard();
-        await sleep(50);
+    // Запускаем обработку без анимаций (просто мгновенно)
+    while (game.checkMatches()) {
+        game.gravitate();
+        game.fill();
     }
     
     renderBoard();
     isAnimating = false;
-}
-
-function animateGravity(moves) {
-    return new Promise(resolve => {
-        const cells = document.querySelectorAll('.cell');
-        moves.forEach(move => {
-            const fromCell = Array.from(cells).find(
-                c => c.dataset.row == move.fromRow && c.dataset.col == move.fromCol
-            );
-            if (fromCell) {
-                fromCell.classList.add('falling');
-            }
-        });
-        setTimeout(() => {
-            cells.forEach(c => c.classList.remove('falling'));
-            resolve();
-        }, 150);
-    });
-}
-
-function animateNewCells(newCells) {
-    return new Promise(resolve => {
-        setTimeout(() => {
-            const cells = document.querySelectorAll('.cell');
-            newCells.forEach(cell => {
-                const newCell = Array.from(cells).find(
-                    c => c.dataset.row == cell.row && c.dataset.col == cell.col
-                );
-                if (newCell) {
-                    newCell.classList.add('new');
-                }
-            });
-            setTimeout(() => {
-                cells.forEach(c => c.classList.remove('new'));
-                resolve();
-            }, 200);
-        }, 50);
-    });
-}
-
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    
+    if (game.isLosed()) {
+        window.parent.postMessage({ 
+            type: 'GAME_OVER', 
+            score: game.getScore() 
+        }, '*');
+    }
 }
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -212,15 +163,3 @@ window.addEventListener('DOMContentLoaded', () => {
     renderBoard();
     window.parent.postMessage({ type: 'GAME_READY' }, '*');
 });
-
-// Переопределяем конец игры
-const originalProcessMatches = processMatches;
-processMatches = async function() {
-    await originalProcessMatches();
-    if (game.isLosed()) {
-        window.parent.postMessage({ 
-            type: 'GAME_OVER', 
-            score: game.getScore() 
-        }, '*');
-    }
-};
