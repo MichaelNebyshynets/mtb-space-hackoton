@@ -6,17 +6,17 @@ body {
     align-items: center;
     background: #004c97;
     font-family: Arial, sans-serif;
-    padding: 10px;
+    padding: 5px;
     box-sizing: border-box;
 }
 
 .game-container {
     background: #ffffff;
-    padding: 15px;
+    padding: 10px;
     border-radius: 10px;
     box-shadow: 0 0 20px rgba(0,0,0,0.3);
     width: 100%;
-    max-width: 400px;
+    max-width: 100%;
     margin: 0 auto;
 }
 
@@ -24,26 +24,25 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
     color: #000000;
-    font-size: 16px;
-    gap: 10px;
-    flex-wrap: wrap;
+    font-size: 14px;
+    gap: 5px;
 }
 
 #reset {
-    padding: 8px 12px;
+    padding: 6px 10px;
     background: #58585a;
     color: #ffffff;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 12px;
 }
 
 .board {
     display: grid;
-    justify-content: center;
+    grid-template-columns: repeat(6, 1fr) !important;
     gap: 4px;
     background: #58585a;
     padding: 8px;
@@ -58,42 +57,52 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: clamp(16px, 6vw, 24px);
+    font-size: 28px;
     font-weight: bold;
     border-radius: 8px;
     cursor: pointer;
     transition: transform 0.1s;
-    min-width: 0;
-    min-height: 0;
 }
 
-/* Для мобильных — увеличиваем область нажатия */
-@media (max-width: 480px) {
-    .game-container {
-        padding: 10px;
-    }
-    
-    .header {
-        font-size: 14px;
-        gap: 5px;
-    }
-    
-    #reset {
-        padding: 6px 10px;
-        font-size: 12px;
-    }
-    
-    .board {
-        gap: 3px;
-        padding: 6px;
-    }
-    
-    .cell {
-        font-size: 18px;
-    }
+/* Упрощаем отображение спец-камней */
+.cell[data-type="1"]::before {
+    content: "⬌";
+    font-size: 24px;
 }
 
-/* Остальные стили (цвета, анимации) оставь как были */
+.cell[data-type="2"]::before {
+    content: "⬍";
+    font-size: 24px;
+}
+
+.cell[data-type="3"]::before {
+    content: "✚";
+    font-size: 28px;
+}
+
+.cell[data-type="4"]::before {
+    content: "💣";
+    font-size: 26px;
+}
+
+/* Скрываем текст для спец-камней */
+.cell[data-type="1"],
+.cell[data-type="2"],
+.cell[data-type="3"],
+.cell[data-type="4"] {
+    color: transparent !important;
+    text-shadow: none !important;
+}
+
+.cell[data-type="1"]::before,
+.cell[data-type="2"]::before,
+.cell[data-type="3"]::before,
+.cell[data-type="4"]::before {
+    color: white !important;
+    text-shadow: 0 0 5px black !important;
+}
+
+/* Цвета обычных камней */
 .cell[data-color="₽"] {
     background: linear-gradient(135deg, #ff4757, #ff6b81);
     color: white;
@@ -119,15 +128,14 @@ body {
     color: white;
 }
 
-.cell:hover {
-    transform: scale(0.95);
+/* Супер-камни — сохраняем градиент */
+.cell[data-type="1"],
+.cell[data-type="2"],
+.cell[data-type="3"],
+.cell[data-type="4"] {
+    background: inherit !important;
 }
 
-.cell.selected {
-    box-shadow: 0 0 0 3px #da291c;
-}
-
-/* Супер-камни */
 .cell[data-type="1"][data-color="₽"],
 .cell[data-type="2"][data-color="₽"],
 .cell[data-type="3"][data-color="₽"],
@@ -163,14 +171,11 @@ body {
     background: linear-gradient(45deg, #a55eea, #cf77ff) !important;
 }
 
-.cell[data-type="1"],
-.cell[data-type="2"],
-.cell[data-type="3"],
-.cell[data-type="4"] {
-    color: white !important;
-    text-shadow: 0 0 5px black !important;
+.cell.selected {
+    box-shadow: 0 0 0 4px #da291c;
 }
 
+/* Анимации */
 .cell[data-type="1"],
 .cell[data-type="2"] {
     animation: superPulse 1.2s infinite;
@@ -185,35 +190,27 @@ body {
 }
 
 .hint {
-    margin-top: 12px;
+    margin-top: 10px;
     color: #58585a;
     text-align: center;
     font-size: 12px;
     font-weight: bold;
 }
 
-@media (max-width: 480px) {
-    .hint {
-        font-size: 11px;
-    }
-}
-
 @keyframes superPulse {
-    0% { box-shadow: 0 0 5px gold; filter: brightness(1); }
-    50% { box-shadow: 0 0 15px gold, 0 0 25px orange; filter: brightness(1.15); }
-    100% { box-shadow: 0 0 5px gold; filter: brightness(1); }
+    0% { box-shadow: 0 0 5px gold; }
+    50% { box-shadow: 0 0 15px gold, 0 0 25px orange; }
+    100% { box-shadow: 0 0 5px gold; }
 }
 
 @keyframes pulse {
     0% { transform: scale(1); box-shadow: 0 0 5px #da291c; }
-    50% { transform: scale(1.05); box-shadow: 0 0 15px #da291c, 0 0 25px #ff6b81; }
+    50% { transform: scale(1.05); box-shadow: 0 0 15px #da291c; }
     100% { transform: scale(1); box-shadow: 0 0 5px #da291c; }
 }
 
 @keyframes bombPulse {
     0% { box-shadow: 0 0 5px #CBAA38; }
-    25% { box-shadow: 0 0 20px #CBAA38, 0 0 30px #da291c; }
-    50% { box-shadow: 0 0 10px #CBAA38, 0 0 40px #ffa502; }
-    75% { box-shadow: 0 0 20px #CBAA38, 0 0 30px #da291c; }
+    50% { box-shadow: 0 0 15px #CBAA38, 0 0 30px #da291c; }
     100% { box-shadow: 0 0 5px #CBAA38; }
 }
