@@ -9,7 +9,7 @@ function PhoneAuth({ onLogin }) {
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [selectedMascot, setSelectedMascot] = useState('robot')
+  const [selectedMascot, setSelectedMascot] = useState('lion')
   const [tempUser, setTempUser] = useState(null)
 
   const formatPhone = (value) => {
@@ -18,7 +18,7 @@ function PhoneAuth({ onLogin }) {
     return cleaned
   }
 
-  // Заглушка отправки кода
+  // Отправка кода (заглушка)
   const handleSendCode = async (e) => {
     e.preventDefault()
     const formattedPhone = formatPhone(phone)
@@ -30,12 +30,12 @@ function PhoneAuth({ onLogin }) {
     setStep('code')
   }
 
-  // Заглушка проверки кода
-    const handleVerifyCode = async (e) => {
+  // Проверка кода
+  const handleVerifyCode = async (e) => {
     e.preventDefault()
     if (code !== '123456') {
-        setError('Неверный код. Используйте 123456')
-        return
+      setError('Неверный код. Используйте 123456')
+      return
     }
     
     setError('')
@@ -43,89 +43,90 @@ function PhoneAuth({ onLogin }) {
     
     // Генерируем UUID из номера
     const generateUUID = (phone) => {
-        const hash = phone.split('').reduce((acc, char) => {
+      const hash = phone.split('').reduce((acc, char) => {
         return ((acc << 5) - acc) + char.charCodeAt(0) | 0
-        }, 0)
-        const hex = Math.abs(hash).toString(16).padStart(32, '0').slice(0, 32)
-        return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20,32)}`
+      }, 0)
+      const hex = Math.abs(hash).toString(16).padStart(32, '0').slice(0, 32)
+      return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20,32)}`
     }
 
     const fakeUser = {
-        id: generateUUID(formattedPhone),
-        phone: formattedPhone
+      id: generateUUID(formattedPhone),
+      phone: formattedPhone
     }
 
     // Проверяем, есть ли уже такой пользователь
     const { data: existingUser } = await supabase
-        .from('users')
-        .select('*')
-        .eq('phone', formattedPhone)
-        .maybeSingle()
+      .from('users')
+      .select('*')
+      .eq('phone', formattedPhone)
+      .maybeSingle()
 
     if (existingUser) {
-        onLogin(fakeUser)
+      onLogin(fakeUser)
     } else {
-        setTempUser(fakeUser)
-        setStep('mascot')
+      setTempUser(fakeUser)
+      setStep('mascot')
     }
-    }
+  }
+
   // Завершить регистрацию
-    const handleComplete = async () => {
+  const handleComplete = async () => {
     setLoading(true)
     setError('')
 
     try {
-        const formattedPhone = formatPhone(phone)
-        
-        // Создаём пользователя
-        const { data: newUser, error: userError } = await supabase
+      const formattedPhone = formatPhone(phone)
+      
+      // Создаём пользователя
+      const { data: newUser, error: userError } = await supabase
         .from('users')
         .insert({
-            id: tempUser.id,
-            phone: formattedPhone,
-            mascot: selectedMascot, // стартовый маскот
-            fuel: 100,
-            hunger: 100,
-            activity: 100,
-            last_seen: new Date()
+          id: tempUser.id,
+          phone: formattedPhone,
+          mascot: selectedMascot,
+          fuel: 100,
+          hunger: 100,
+          activity: 100,
+          last_seen: new Date()
         })
         .select()
         .single()
 
-        if (userError) throw userError
+      if (userError) throw userError
 
-        // Создаём всех 5 маскотов
-        const mascots = ['lion', 'eagle', 'bison', 'stork', 'cat']
-        for (const mascotId of mascots) {
+      // Создаём всех 5 маскотов
+      const mascots = ['lion', 'eagle', 'bear', 'stork', 'cat']
+      for (const mascotId of mascots) {
         await supabase.from('user_mascots').insert({
-            user_id: tempUser.id,
-            mascot_id: mascotId,
-            level: 1,
-            experience: 0,
-            is_active: mascotId === selectedMascot,
-            unlocked_abilities: []
+          user_id: tempUser.id,
+          mascot_id: mascotId,
+          level: 1,
+          experience: 0,
+          is_active: mascotId === selectedMascot,
+          unlocked_abilities: []
         })
-        }
+      }
 
-        onLogin(tempUser)
+      onLogin(tempUser)
     } catch (err) {
-        setError(err.message)
+      setError(err.message)
     } finally {
-        setLoading(false)
+      setLoading(false)
     }
-    }
-    
+  }
 
-    const handleBack = () => {
-        if (step === 'code') {
-            setStep('phone')
-            setCode('')
-        } else if (step === 'mascot') {
-            setStep('code')
-        }
-        setError('')
+  const handleBack = () => {
+    if (step === 'code') {
+      setStep('phone')
+      setCode('')
+    } else if (step === 'mascot') {
+      setStep('code')
     }
+    setError('')
+  }
 
+  // Экран выбора маскота
   if (step === 'mascot') {
     return (
       <div className="auth-container">
@@ -142,6 +143,7 @@ function PhoneAuth({ onLogin }) {
     )
   }
 
+  // Экран ввода телефона / кода
   return (
     <div className="auth-container">
       <div className="auth-card">

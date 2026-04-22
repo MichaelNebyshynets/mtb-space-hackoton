@@ -5,9 +5,12 @@ import UpgradeShop from './UpgradeShop'
 import BankWidget from './BankWidget'
 import Character from './Character'
 import PhoneAuth from './PhoneAuth'
+import MascotSwitcher from './MascotSwitcher'
 import { supabase } from './supabase'
 
 function App() {
+  const [showMascotSwitcher, setShowMascotSwitcher] = useState(false) 
+
   const [session, setSession] = useState(null)
 
   const [fuel, setFuel] = useState(0)
@@ -28,17 +31,45 @@ function App() {
 
   // Загрузка всех маскотов пользователя
   const loadUserMascots = async (userId) => {
-    const { data } = await supabase
+    console.log('🔄 Загружаем маскотов для userId:', userId)
+    
+    let { data, error } = await supabase
       .from('user_mascots')
       .select('*')
       .eq('user_id', userId)
       .order('mascot_id')
     
-    if (data) {
-      setUserMascots(data)
-      const active = data.find(m => m.is_active) || data[0]
-      if (active) setActiveMascot(active)
+    console.log('📦 Ответ от Supabase:', { data, error })
+    
+    // Если маскотов нет — создаём
+    if (!data || data.length === 0) {
+      console.log('🆕 Маскотов нет, создаём...')
+      
+      const mascots = ['lion', 'eagle', 'bear', 'stork', 'cat']
+      for (const mascotId of mascots) {
+        await supabase.from('user_mascots').insert({
+          user_id: userId,
+          mascot_id: mascotId,
+          level: 1,
+          experience: 0,
+          is_active: mascotId === 'lion'
+        })
+      }
+      
+      // Загружаем снова
+      const { data: newData } = await supabase
+        .from('user_mascots')
+        .select('*')
+        .eq('user_id', userId)
+        .order('mascot_id')
+      
+      data = newData
     }
+    
+    console.log('✅ Итоговые маскоты:', data)
+    setUserMascots(data || [])
+    const active = data?.find(m => m.is_active) || data?.[0]
+    if (active) setActiveMascot(active)
   }
 
   // Переключение активного маскота
@@ -479,6 +510,7 @@ function App() {
   }
 
   console.log('App render:', { session, loading })
+  console.log('userMascots:', userMascots)
 
   return (
     <div className="app">
@@ -500,6 +532,7 @@ function App() {
               upgrades={upgrades}
               mascot={activeMascot?.mascot_id || 'lion'}
               mascotLevel={activeMascot?.level || 1}
+              onAvatarClick={() => setShowMascotSwitcher(true)}
             />
             
             <FuelCard fuel={fuel} />
@@ -529,7 +562,7 @@ function App() {
         ) : (
           <UpgradeShop 
             fuel={fuel}
-            upgrades={upgrades}
+            activeMascot={activeMascot}
             onUpgrade={handleUpgrade}
             onBack={() => setCurrentScreen('home')}
           />
@@ -603,6 +636,15 @@ function App() {
           transactions={bankTransactions}
           onUseCode={handleBankCode}
           onClose={() => setShowBankWidget(false)}
+        />
+      )}
+
+      {showMascotSwitcher && (
+        <MascotSwitcher
+          mascots={userMascots}
+          activeMascotId={activeMascot?.mascot_id}
+          onSwitch={switchMascot}
+          onClose={() => setShowMascotSwitcher(false)}
         />
       )}
     </div>

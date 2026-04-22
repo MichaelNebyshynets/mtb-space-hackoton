@@ -2,7 +2,7 @@ import './Character.css'
 import BankerBot from './BankerBot'
 import MascotDisplay from './MascotDisplay'
 
-function Character({ hunger, activity, level, upgrades, mascot, mascotLevel}) {
+function Character({ hunger, activity, level, upgrades, mascot, mascotLevel, onAvatarClick}) {
   const getMood = () => {
     if (hunger < 30) return 'sad'
     if (hunger < 60) return 'neutral'
@@ -14,7 +14,7 @@ function Character({ hunger, activity, level, upgrades, mascot, mascotLevel}) {
   
   return (
     <div className="character-card">
-      <div className="character-avatar">
+      <div className="character-avatar-clickable" onClick={onAvatarClick} style={{ cursor: 'pointer' }}>
         <MascotDisplay mascot={mascot} level={mascotLevel || level} size="large" />
         <div className="character-level">Ур. {mascotLevel || level}</div>
       </div>

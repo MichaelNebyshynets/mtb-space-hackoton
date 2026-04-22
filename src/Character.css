@@ -93,3 +93,15 @@
   margin-left: auto;
   margin-right: auto;
 }
+
+.character-avatar.clickable {
+  transition: transform 0.2s;
+}
+
+.character-avatar.clickable:hover {
+  transform: scale(1.02);
+}
+
+.character-avatar.clickable:active {
+  transform: scale(0.98);
+}
