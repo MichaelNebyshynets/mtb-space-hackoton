@@ -1,7 +1,7 @@
 import './Character.css'
 import BankerBot from './BankerBot'
 
-function Character({ hunger, activity, level, upgrades }) {
+function Character({ hunger, activity, level, upgrades, mascot, mascotLevel}) {
   const getMood = () => {
     if (hunger < 30) return 'sad'
     if (hunger < 60) return 'neutral'
@@ -14,8 +14,8 @@ function Character({ hunger, activity, level, upgrades }) {
   return (
     <div className="character-card">
       <div className="character-avatar">
-        <BankerBot mood={mood} upgrades={upgrades} />
-        <div className="character-level">Ур. {level}</div>
+        <MascotDisplay mascot={mascot} level={mascotLevel || level} size="large" />
+        <div className="character-level">Ур. {mascotLevel || level}</div>
       </div>
       
       <div className="character-stats">

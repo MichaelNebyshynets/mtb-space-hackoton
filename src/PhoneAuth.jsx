@@ -70,39 +70,50 @@ function PhoneAuth({ onLogin }) {
     }
     }
   // Завершить регистрацию
-  const handleComplete = async () => {
+    const handleComplete = async () => {
     setLoading(true)
     setError('')
-    
-    try {
-      const { error } = await supabase.from('users').insert({
-        id: tempUser.id,
-        phone: tempUser.phone,
-        mascot: selectedMascot,
-        fuel: 100,
-        hunger: 100,
-        activity: 100,
-        last_seen: new Date()
-      })
-      
-      if (error) throw error
-      onLogin(tempUser)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }
 
-  const handleBack = () => {
-    if (step === 'code') {
-      setStep('phone')
-      setCode('')
-    } else if (step === 'mascot') {
-      setStep('code')
+    try {
+        const formattedPhone = formatPhone(phone)
+        
+        // Создаём пользователя
+        const { data: newUser, error: userError } = await supabase
+        .from('users')
+        .insert({
+            id: tempUser.id,
+            phone: formattedPhone,
+            mascot: selectedMascot, // стартовый маскот
+            fuel: 100,
+            hunger: 100,
+            activity: 100,
+            last_seen: new Date()
+        })
+        .select()
+        .single()
+
+        if (userError) throw userError
+
+        // Создаём всех 5 маскотов
+        const mascots = ['lion', 'eagle', 'bison', 'stork', 'cat']
+        for (const mascotId of mascots) {
+        await supabase.from('user_mascots').insert({
+            user_id: tempUser.id,
+            mascot_id: mascotId,
+            level: 1,
+            experience: 0,
+            is_active: mascotId === selectedMascot,
+            unlocked_abilities: []
+        })
+        }
+
+        onLogin(tempUser)
+    } catch (err) {
+        setError(err.message)
+    } finally {
+        setLoading(false)
     }
-    setError('')
-  }
+    }
 
   if (step === 'mascot') {
     return (

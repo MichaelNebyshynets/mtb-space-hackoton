@@ -22,6 +22,64 @@ function App() {
   
   const [purchaseAmount, setPurchaseAmount] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('cafe')
+
+  const [userMascots, setUserMascots] = useState([])
+  const [activeMascot, setActiveMascot] = useState(null)
+
+  // Загрузка всех маскотов пользователя
+  const loadUserMascots = async (userId) => {
+    const { data } = await supabase
+      .from('user_mascots')
+      .select('*')
+      .eq('user_id', userId)
+      .order('mascot_id')
+    
+    if (data) {
+      setUserMascots(data)
+      const active = data.find(m => m.is_active) || data[0]
+      if (active) setActiveMascot(active)
+    }
+  }
+
+  // Переключение активного маскота
+  const switchMascot = async (mascotId) => {
+    // Снимаем active со всех
+    await supabase
+      .from('user_mascots')
+      .update({ is_active: false })
+      .eq('user_id', dbUser.id)
+    
+    // Ставим active на выбранный
+    await supabase
+      .from('user_mascots')
+      .update({ is_active: true })
+      .eq('user_id', dbUser.id)
+      .eq('mascot_id', mascotId)
+    
+    // Обновляем локально
+    setUserMascots(prev => prev.map(m => ({
+      ...m,
+      is_active: m.mascot_id === mascotId
+    })))
+    
+    setActiveMascot(userMascots.find(m => m.mascot_id === mascotId))
+  }
+
+  // При регистрации — создаём всех 5 маскотов
+  const createInitialMascots = async (userId) => {
+    const mascots = ['lion', 'eagle', 'bison', 'stork', 'cat']
+    
+    for (const mascotId of mascots) {
+      await supabase.from('user_mascots').insert({
+        user_id: userId,
+        mascot_id: mascotId,
+        level: 1,
+        experience: 0,
+        is_active: mascotId === 'lion', // Лев — стартовый
+        unlocked_abilities: []
+      })
+    }
+  }
   
   const [upgrades, setUpgrades] = useState({
     armor: { level: 1, name: 'Броня', baseCost: 100 },
@@ -467,6 +525,8 @@ function App() {
               activity={character.activity}
               level={currentLevel}
               upgrades={upgrades}
+              mascot={activeMascot?.mascot_id || 'lion'}
+              mascotLevel={activeMascot?.level || 1}
             />
             
             <FuelCard fuel={fuel} />
