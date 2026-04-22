@@ -8,8 +8,7 @@ import PhoneAuth from './PhoneAuth'
 import { supabase } from './supabase'
 
 function App() {
-  const [sessions, setSessions] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [session, setSession] = useState(null)
 
   const [fuel, setFuel] = useState(0)
   const [telegramUser, setTelegramUser] = useState(null)
@@ -441,6 +440,8 @@ function App() {
       </div>
     )
   }
+
+  console.log('App render:', { session, loading })
 
   return (
     <div className="app">

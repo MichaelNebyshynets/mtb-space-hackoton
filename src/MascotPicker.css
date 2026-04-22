@@ -1,0 +1,53 @@
+.mascot-picker h3 {
+  color: white;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.mascot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.mascot-card {
+  background: linear-gradient(145deg, #1e1e3a, #16162e);
+  border-radius: 20px;
+  padding: 20px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  border: 3px solid transparent;
+  position: relative;
+}
+
+.mascot-emoji {
+  font-size: 48px;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 40px;
+}
+
+.mascot-name {
+  color: white;
+  font-weight: 500;
+}
+
+.mascot-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+}
