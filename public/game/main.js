@@ -55,6 +55,7 @@ function renderBoard() {
     }
 }
 
+// Свайпы
 function onTouchStart(e) {
     if (game.isLosed() || isAnimating) return;
     const touch = e.touches[0];
@@ -128,25 +129,129 @@ function onCellClick(e) {
     }
 }
 
-function processMatches() {
+// async function processMatches() {
+//     isAnimating = true;
+    
+//     while (true) {
+//         const hadMatches = game.checkMatches();
+//         if (!hadMatches) break;
+
+//         renderBoard();
+
+//         // 👇 СНАЧАЛА считаем
+//         const moves = game.gravitateAnimated();
+
+//         // 👇 ПОТОМ анимация
+//         if (moves.length > 0) {
+//             await animateGravity(moves);
+//         }
+
+//         // 👇 ТОЛЬКО ТЕПЕРЬ реально двигаем
+//         game.gravitate();
+//         renderBoard();
+
+//         await sleep(50);
+
+//         const newCells = game.fillAnimated();
+
+//         if (newCells.length > 0) {
+//             await animateNewCells(newCells);
+//         }
+
+//         renderBoard();
+//         await sleep(100);
+//     }
+    
+//     renderBoard();
+//     isAnimating = false;
+// }
+
+
+async function processMatches() {
     if (isAnimating) return;
     isAnimating = true;
-    
-    // Запускаем обработку без анимаций (просто мгновенно)
-    while (game.checkMatches()) {
+
+    while (true) {
+        // 1. Проверяем и удаляем совпадения
+        const hasMatches = game.checkMatches();
+        if (!hasMatches) break;
+
+        renderBoard();
+        await sleep(120);
+
+        // 2. СЧИТАЕМ падения (без изменения board!)
+        const moves = game.gravitateAnimated();
+
+        // 3. АНИМАЦИЯ падения (по старому DOM)
+        if (moves.length > 0) {
+            await animateGravity(moves);
+        }
+
+        // 4. ТЕПЕРЬ реально двигаем данные
         game.gravitate();
-        game.fill();
+        renderBoard();
+        await sleep(80);
+
+        // 5. Новые камни
+        const newCells = game.fillAnimated();
+
+        // 6. Анимация появления
+        if (newCells.length > 0) {
+            renderBoard(); // сначала отрисовать новые
+            await animateNewCells(newCells);
+        }
+
+        await sleep(100);
     }
-    
+
     renderBoard();
     isAnimating = false;
-    
-    if (game.isLosed()) {
-        window.parent.postMessage({ 
-            type: 'GAME_OVER', 
-            score: game.getScore() 
-        }, '*');
-    }
+}
+
+function animateGravity(moves) {
+    return new Promise(resolve => {
+        const cells = document.querySelectorAll('.cell');
+
+        moves.forEach(move => {
+            const cell = Array.from(cells).find(
+                c => c.dataset.row == move.fromRow && c.dataset.col == move.fromCol
+            );
+
+            if (cell) {
+                cell.classList.add('falling');
+            }
+        });
+
+        // форсим перерисовку (важно)
+        document.body.offsetHeight;
+
+        setTimeout(resolve, 150);
+    });
+}
+
+
+function animateNewCells(newCells) {
+    return new Promise(resolve => {
+        setTimeout(() => {
+            const cells = document.querySelectorAll('.cell');
+            newCells.forEach(cell => {
+                const newCell = Array.from(cells).find(
+                    c => c.dataset.row == cell.row && c.dataset.col == cell.col
+                );
+                if (newCell) {
+                    newCell.classList.add('new');
+                }
+            });
+            setTimeout(() => {
+                cells.forEach(c => c.classList.remove('new'));
+                resolve();
+            }, 200);
+        }, 50);
+    });
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -163,3 +268,15 @@ window.addEventListener('DOMContentLoaded', () => {
     renderBoard();
     window.parent.postMessage({ type: 'GAME_READY' }, '*');
 });
+
+// Переопределяем конец игры
+const originalProcessMatches = processMatches;
+processMatches = async function() {
+    await originalProcessMatches();
+    if (game.isLosed()) {
+        window.parent.postMessage({ 
+            type: 'GAME_OVER', 
+            score: game.getScore() 
+        }, '*');
+    }
+};

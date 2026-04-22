@@ -189,6 +189,7 @@ body {
 
 .cell.falling {
     animation: fall 0.15s ease-in;
+    transition: none !important;
 }
 
 @keyframes fall {

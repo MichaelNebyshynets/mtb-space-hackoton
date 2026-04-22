@@ -49,10 +49,10 @@ export class Match3Game {
         
         this.movesUsed++;
 
-        while(this.checkMatches()) {
-            this.gravitate();
-            this.fill();
-        }
+        // while(this.checkMatches()) {
+        //     this.gravitate();
+        //     this.fill();
+        // }
         return true;
     }
 
@@ -315,7 +315,7 @@ export class Match3Game {
 
     // В класс Match3Game добавить:
     gravitateAnimated() {
-        const moves = []; // { fromRow, fromCol, toRow, toCol }
+        const moves = [];
         
         for(let c = 0; c < this.cols; c++) {
             let cur = this.rows - 2;
@@ -325,16 +325,12 @@ export class Match3Game {
                         cur--;
                     }
                     if(cur >= 0) {
-                        // Запоминаем перемещение
                         moves.push({
-                            fromRow: cur, fromCol: c,
-                            toRow: r, toCol: c,
-                            color: this.board[cur][c],
-                            type: this.types[cur][c]
+                            fromRow: cur,
+                            fromCol: c,
+                            toRow: r,
+                            toCol: c
                         });
-                        
-                        [this.board[r][c], this.board[cur][c]] = [this.board[cur][c], this.board[r][c]];
-                        [this.types[r][c], this.types[cur][c]] = [this.types[cur][c], this.types[r][c]];
                         cur--;
                     }
                 }
