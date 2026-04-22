@@ -57,49 +57,20 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 28px;
+    font-size: 32px;
     font-weight: bold;
     border-radius: 8px;
     cursor: pointer;
     transition: transform 0.1s;
 }
 
-/* Упрощаем отображение спец-камней */
-.cell[data-type="1"]::before {
-    content: "⬌";
-    font-size: 24px;
-}
-
-.cell[data-type="2"]::before {
-    content: "⬍";
-    font-size: 24px;
-}
-
-.cell[data-type="3"]::before {
-    content: "✚";
-    font-size: 28px;
-}
-
-.cell[data-type="4"]::before {
-    content: "💣";
-    font-size: 26px;
-}
-
-/* Скрываем текст для спец-камней */
 .cell[data-type="1"],
 .cell[data-type="2"],
 .cell[data-type="3"],
 .cell[data-type="4"] {
-    color: transparent !important;
-    text-shadow: none !important;
-}
-
-.cell[data-type="1"]::before,
-.cell[data-type="2"]::before,
-.cell[data-type="3"]::before,
-.cell[data-type="4"]::before {
     color: white !important;
     text-shadow: 0 0 5px black !important;
+    font-size: 36px;
 }
 
 /* Цвета обычных камней */
@@ -129,13 +100,6 @@ body {
 }
 
 /* Супер-камни — сохраняем градиент */
-.cell[data-type="1"],
-.cell[data-type="2"],
-.cell[data-type="3"],
-.cell[data-type="4"] {
-    background: inherit !important;
-}
-
 .cell[data-type="1"][data-color="₽"],
 .cell[data-type="2"][data-color="₽"],
 .cell[data-type="3"][data-color="₽"],
@@ -169,6 +133,10 @@ body {
 .cell[data-type="3"][data-color="€"],
 .cell[data-type="4"][data-color="€"] {
     background: linear-gradient(45deg, #a55eea, #cf77ff) !important;
+}
+
+.cell:hover {
+    transform: scale(0.95);
 }
 
 .cell.selected {
