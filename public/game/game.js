@@ -313,6 +313,55 @@ export class Match3Game {
         }
     }
 
+    // В класс Match3Game добавить:
+    gravitateAnimated() {
+        const moves = []; // { fromRow, fromCol, toRow, toCol }
+        
+        for(let c = 0; c < this.cols; c++) {
+            let cur = this.rows - 2;
+            for(let r = this.rows - 1; r >= 0 && cur >= 0; r--) {
+                if(this.board[r][c] == ' ') {
+                    while(cur >= 0 && this.board[cur][c] == ' ') {
+                        cur--;
+                    }
+                    if(cur >= 0) {
+                        // Запоминаем перемещение
+                        moves.push({
+                            fromRow: cur, fromCol: c,
+                            toRow: r, toCol: c,
+                            color: this.board[cur][c],
+                            type: this.types[cur][c]
+                        });
+                        
+                        [this.board[r][c], this.board[cur][c]] = [this.board[cur][c], this.board[r][c]];
+                        [this.types[r][c], this.types[cur][c]] = [this.types[cur][c], this.types[r][c]];
+                        cur--;
+                    }
+                }
+                if(cur > r - 2) {
+                    cur = r - 2;
+                }
+            }
+        }
+        return moves;
+    }
+
+    fillAnimated() {
+        const newCells = []; // { row, col, color, type }
+        
+        for(let r = 0; r < this.rows; r++) {
+            for(let c = 0; c < this.cols; c++) {
+                if(this.board[r][c] == ' ') {
+                    const color = this.colors[Math.floor(Math.random() * this.colors.length)];
+                    this.board[r][c] = color;
+                    this.types[r][c] = 0;
+                    newCells.push({ row: r, col: c, color, type: 0 });
+                }
+            }
+        }
+        return newCells;
+    }
+
     getBoard() { return this.board; }
     getScore() { return this.score; }
     getMoves() { return this.movesUsed; }
