@@ -57,23 +57,24 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 32px;
+    font-size: 7vw;  /* адаптивный размер */
     font-weight: bold;
     border-radius: 8px;
     cursor: pointer;
     transition: transform 0.1s;
+    line-height: 1;
+    padding: 0;
+    margin: 0;
 }
 
-.cell[data-type="1"],
-.cell[data-type="2"],
-.cell[data-type="3"],
-.cell[data-type="4"] {
-    color: white !important;
-    text-shadow: 0 0 5px black !important;
-    font-size: 36px;
+/* Ограничение максимального размера */
+@media (min-width: 500px) {
+    .cell {
+        font-size: 35px;
+    }
 }
 
-/* Цвета обычных камней */
+/* Цвета */
 .cell[data-color="₽"] {
     background: linear-gradient(135deg, #ff4757, #ff6b81);
     color: white;
@@ -99,7 +100,7 @@ body {
     color: white;
 }
 
-/* Супер-камни — сохраняем градиент */
+/* Супер-камни */
 .cell[data-type="1"][data-color="₽"],
 .cell[data-type="2"][data-color="₽"],
 .cell[data-type="3"][data-color="₽"],
@@ -135,15 +136,18 @@ body {
     background: linear-gradient(45deg, #a55eea, #cf77ff) !important;
 }
 
-.cell:hover {
-    transform: scale(0.95);
+.cell[data-type="1"],
+.cell[data-type="2"],
+.cell[data-type="3"],
+.cell[data-type="4"] {
+    color: white !important;
+    text-shadow: 0 0 3px black !important;
 }
 
 .cell.selected {
-    box-shadow: 0 0 0 4px #da291c;
+    box-shadow: 0 0 0 3px #da291c;
 }
 
-/* Анимации */
 .cell[data-type="1"],
 .cell[data-type="2"] {
     animation: superPulse 1.2s infinite;
