@@ -187,7 +187,7 @@ body {
     100% { box-shadow: 0 0 5px #CBAA38; }
 }
 
-.cell.falling {
+/* .cell.falling {
     animation: fall 0.15s ease-in;
     transition: none !important;
 }
@@ -195,7 +195,7 @@ body {
 @keyframes fall {
     0% { transform: translateY(-100%); opacity: 0; }
     100% { transform: translateY(0); opacity: 1; }
-}
+} */
 
 .cell.new {
     animation: appear 0.2s ease-out;

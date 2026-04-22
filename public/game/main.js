@@ -177,7 +177,13 @@ async function processMatches() {
         if (!hasMatches) break;
 
         renderBoard();
-        await sleep(120);
+        // добавил
+        document.querySelectorAll('.cell').forEach(cell => {
+            cell.style.transform = '';
+            cell.style.transition = '';
+        });
+
+        await sleep(80);
 
         // 2. СЧИТАЕМ падения (без изменения board!)
         const moves = game.gravitateAnimated();
@@ -208,6 +214,8 @@ async function processMatches() {
     isAnimating = false;
 }
 
+
+//поменял
 function animateGravity(moves) {
     return new Promise(resolve => {
         const cells = document.querySelectorAll('.cell');
@@ -218,14 +226,17 @@ function animateGravity(moves) {
             );
 
             if (cell) {
-                cell.classList.add('falling');
+                const distance = move.distance;
+
+                // 👇 двигаем на реальное расстояние
+                cell.style.transform = `translateY(${distance * 100}%)`;
+                cell.style.transition = 'transform 0.2s ease';
             }
         });
 
-        // форсим перерисовку (важно)
-        document.body.offsetHeight;
-
-        setTimeout(resolve, 150);
+        setTimeout(() => {
+            resolve();
+        }, 200);
     });
 }
 

@@ -285,6 +285,7 @@ export class Match3Game {
         for(let c = 0; c < this.cols; c++) {
             let cur = this.rows - 2;
             for(let r = this.rows - 1; r >= 0 && cur >= 0; r--) {
+                //let cur = this.rows - 2;
                 if(this.board[r][c] == ' ') {
                     while(cur >= 0 && this.board[cur][c] == ' ') {
                         cur--;
@@ -316,29 +317,37 @@ export class Match3Game {
     // В класс Match3Game добавить:
     gravitateAnimated() {
         const moves = [];
-        
-        for(let c = 0; c < this.cols; c++) {
-            let cur = this.rows - 2;
-            for(let r = this.rows - 1; r >= 0 && cur >= 0; r--) {
-                if(this.board[r][c] == ' ') {
-                    while(cur >= 0 && this.board[cur][c] == ' ') {
+
+        for (let c = 0; c < this.cols; c++) {
+            let cur = this.rows - 2; // 👈 ОБЪЯВЛЯЕМ ЗДЕСЬ
+
+            for (let r = this.rows - 1; r >= 0 && cur >= 0; r--) {
+
+                if (this.board[r][c] == ' ') {
+
+                    while (cur >= 0 && this.board[cur][c] == ' ') {
                         cur--;
                     }
-                    if(cur >= 0) {
+
+                    if (cur >= 0) {
                         moves.push({
                             fromRow: cur,
                             fromCol: c,
                             toRow: r,
-                            toCol: c
+                            toCol: c,
+                            distance: r - cur // 👈 теперь правильно
                         });
+
                         cur--;
                     }
                 }
-                if(cur > r - 2) {
+
+                if (cur > r - 2) {
                     cur = r - 2;
                 }
             }
         }
+
         return moves;
     }
 
