@@ -50,15 +50,30 @@ function App() {
   }
 
   // Обработка конца игры
-  const handleGameEnd = (score) => {
-    setBattery(prev => prev - 1)  // Тратим 1 батарейку
+  const handleGameEnd = async (score) => {
+    console.log('🔥 handleGameEnd вызван! score:', score)
+
+
+    const newBattery = battery - 1  // Тратим 1 батарейку
+    const earnedLoyalty = Math.floor(score / 10) + 5  // 5 базово + за очки
+    const newLoyalty = loyaltyPoints + earnedLoyalty
+    
+    // Сохраняем в Supabase
+    if (dbUser && dbUser.id !== 'local') {
+      await supabase
+        .from('users')
+        .update({ 
+          battery: newBattery,
+          loyalty_points: newLoyalty 
+        })
+        .eq('id', dbUser.id)
+    }
+    
+    setBattery(newBattery)
+    setLoyaltyPoints(newLoyalty)
     setShowGame(false)
     
-    // Награда за игру
-    const earnedLoyalty = Math.floor(score / 10) + 5  // 5 базово + за очки
-    setLoyaltyPoints(prev => prev + earnedLoyalty)
-    
-    alert(`🎮 Игра окончена! Счёт: ${score}\n+${earnedLoyalty} ⭐ баллов лояльности`)
+    alert(`🎮 Игра окончена! Счёт: ${score}\n-1 🔋\n+${earnedLoyalty} ⭐ баллов лояльности`)
   }
 
 
@@ -214,7 +229,7 @@ useEffect(() => {
   }
   
   const loadUserData = async () => {
-    const userId = session.id  // ← используем ID из сессии
+    const userId = session.id
     
     console.log('🔑 Загружаем данные для userId:', userId)
     
@@ -224,7 +239,7 @@ useEffect(() => {
       .select('*')
       .eq('id', userId)
       .maybeSingle()
-    
+  
     if (!userData) {
       console.log('🆕 Создаём пользователя в таблице users')
       const { data: newUser } = await supabase
@@ -233,9 +248,10 @@ useEffect(() => {
           id: userId,
           phone: session.phone || 'unknown',
           mascot: 'lion',
-          fuel: 100,
-          hunger: 100,
-          activity: 100,
+          balance: 1247.50,
+          battery: 5,
+          max_battery: 5,
+          loyalty_points: 420,
           last_seen: new Date()
         })
         .select()
@@ -245,7 +261,10 @@ useEffect(() => {
     }
     
     setDbUser(userData)
-    setFuel(userData.fuel || 100)
+    setBalance(userData.balance || 1247.50)
+    setBattery(userData.battery || 5)
+    setMaxBattery(userData.max_battery || 5)
+    setLoyaltyPoints(userData.loyalty_points || 420)
     
     // 2. Загружаем маскотов
     let { data: mascots } = await supabase
@@ -256,7 +275,7 @@ useEffect(() => {
     
     console.log('📦 Маскоты из базы:', mascots)
     
-    // 3. Если маскотов нет — создаём ПРЯМО СЕЙЧАС
+    // 3. Если маскотов нет — создаём
     if (!mascots || mascots.length === 0) {
       console.log('🆕 СОЗДАЁМ МАСКОТОВ')
       
@@ -295,6 +314,34 @@ useEffect(() => {
   
   loadUserData()
 }, [session])
+
+
+  const saveBalance = async (newBalance) => {
+    if (dbUser && dbUser.id !== 'local') {
+      await supabase
+        .from('users')
+        .update({ balance: newBalance })
+        .eq('id', dbUser.id)
+    }
+  }
+
+  const saveBattery = async (newBattery) => {
+    if (dbUser && dbUser.id !== 'local') {
+      await supabase
+        .from('users')
+        .update({ battery: newBattery })
+        .eq('id', dbUser.id)
+    }
+  }
+
+  const saveLoyaltyPoints = async (newLoyalty) => {
+    if (dbUser && dbUser.id !== 'local') {
+      await supabase
+        .from('users')
+        .update({ loyalty_points: newLoyalty })
+        .eq('id', dbUser.id)
+    }
+  }
 
     // Если не залогинен — показываем PhoneAuth
     if (!session) {
@@ -472,20 +519,22 @@ useEffect(() => {
     
     const newBattery = battery + earnedBattery
     const newLoyalty = loyaltyPoints + earnedLoyalty
+    const newBalance = balance - numAmount
     
     if (dbUser && dbUser.id !== 'local') {
       await supabase
         .from('users')
         .update({ 
           battery: newBattery,
-          loyalty_points: newLoyalty 
+          loyalty_points: newLoyalty,
+          balance: newBalance
         })
         .eq('id', dbUser.id)
     }
     
     setBattery(newBattery)
     setLoyaltyPoints(newLoyalty)
-    setBalance(prev => prev - numAmount)  // списываем с реального счёта
+    setBalance(newBalance)  // списываем с реального счёта
     
     alert(`✅ Перевод на ${amount} BYN выполнен!\n+${earnedBattery}🔋 +${earnedLoyalty}⭐`)
   }
@@ -500,20 +549,22 @@ useEffect(() => {
     
     const newBattery = battery + earnedBattery
     const newLoyalty = loyaltyPoints + earnedLoyalty
+    const newBalance= balance - numAmount
     
     if (dbUser && dbUser.id !== 'local') {
       await supabase
         .from('users')
         .update({ 
           battery: newBattery,
-          loyalty_points: newLoyalty 
+          loyalty_points: newLoyalty,
+          balance: newBalance
         })
         .eq('id', dbUser.id)
     }
     
     setBattery(newBattery)
     setLoyaltyPoints(newLoyalty)
-    setBalance(prev => prev - numAmount)
+    setBalance(newBalance)
     
     alert(`✅ Оплата ЕРИП на ${amount} BYN выполнена!\n+${earnedBattery}🔋 +${earnedLoyalty}⭐ (бонус x3)`)
   }
@@ -528,20 +579,22 @@ useEffect(() => {
     
     const newBattery = battery + earnedBattery
     const newLoyalty = loyaltyPoints + earnedLoyalty
+    const newBalance = balance - numAmount
     
     if (dbUser && dbUser.id !== 'local') {
       await supabase
         .from('users')
         .update({ 
           battery: newBattery,
-          loyalty_points: newLoyalty 
+          loyalty_points: newLoyalty, 
+          balance: newBalance
         })
         .eq('id', dbUser.id)
     }
     
     setBattery(newBattery)
     setLoyaltyPoints(newLoyalty)
-    setBalance(prev => prev - numAmount)
+    setBalance(newBalance)
     
     alert(`✅ Вклад пополнен на ${amount} BYN!\n+${earnedBattery}🔋 +${earnedLoyalty}⭐ (бонус x5)`)
   }
@@ -700,9 +753,9 @@ useEffect(() => {
               </button>
             </div>
             
-            <button className="bank-nav-button" onClick={() => setShowBankWidget(true)}>
+            {/* <button className="bank-nav-button" onClick={() => setShowBankWidget(true)}>
               🏦 Мои операции (МТБанк)
-            </button>
+            </button> */}
 
             <button className="game-nav-button" onClick={startGame}>
               🎮 Играть (1 🔋)
