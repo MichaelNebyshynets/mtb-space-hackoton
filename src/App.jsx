@@ -6,9 +6,16 @@ import BankWidget from './BankWidget'
 import Character from './Character'
 import PhoneAuth from './PhoneAuth'
 import MascotSwitcher from './MascotSwitcher'
+import BalanceCard from './BalanceCard'
 import { supabase } from './supabase'
 
 function App() {
+
+  const [balance, setBalance] = useState(1247.50)  // реальный счёт
+  const [loyaltyPoints, setLoyaltyPoints] = useState(420)  // баллы для прокачек
+  const [battery, setBattery] = useState(3)
+  const [maxBattery, setMaxBattery] = useState(5)
+
   const [showMascotSwitcher, setShowMascotSwitcher] = useState(false) 
 
   const [session, setSession] = useState(null)
@@ -28,6 +35,28 @@ function App() {
 
   const [userMascots, setUserMascots] = useState([])
   const [activeMascot, setActiveMascot] = useState(null)
+
+
+  const calculateBattery = (amount) => {
+    return Math.floor(amount / 10)  // 1 батарейка за каждые 10 BYN
+  }
+
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setBattery(prev => prev < maxBattery ? prev + 1 : prev)
+    }, 3600000) // каждый час
+    
+    return () => clearInterval(interval)
+  }, [maxBattery])
+
+  const mascotNames = {
+    lion: 'Лев',
+    eagle: 'Орёл',
+    bear: 'Медведь',
+    stork: 'Аист',
+    cat: 'Кот',
+  }
 
   // Загрузка всех маскотов пользователя
   const loadUserMascots = async (userId) => {
@@ -122,10 +151,6 @@ function App() {
   })
   const [bankTransactions, setBankTransactions] = useState([])
   
-  const [character, setCharacter] = useState({
-    hunger: 100,
-    activity: 100
-  })
 
   const categories = {
     cafe: { name: 'Кафе', multiplier: 2, icon: '🍕' },
@@ -196,10 +221,6 @@ useEffect(() => {
     
     setDbUser(userData)
     setFuel(userData.fuel || 100)
-    setCharacter({
-      hunger: userData.hunger || 100,
-      activity: userData.activity || 100
-    })
     
     // 2. Загружаем маскотов
     let { data: mascots } = await supabase
@@ -413,80 +434,91 @@ useEffect(() => {
   const currentLevelFuel = fuel % 500
   const progressPercent = (currentLevelFuel / 500) * 100
 
-  const updateLastSeen = async () => {
+
+// Удали handlePurchase и модалку покупки, добавь эти три функции:
+
+  const handleTransfer = async () => {
+    const amount = prompt('Введите сумму перевода (BYN):')
+    if (!amount || amount <= 0) return
+    
+    const numAmount = Number(amount)
+    const earnedBattery = calculateBattery(numAmount)
+    const earnedLoyalty = Math.floor(numAmount * 2)
+    
+    const newBattery = battery + earnedBattery
+    const newLoyalty = loyaltyPoints + earnedLoyalty
+    
     if (dbUser && dbUser.id !== 'local') {
       await supabase
         .from('users')
-        .update({ last_seen: new Date() })
+        .update({ 
+          battery: newBattery,
+          loyalty_points: newLoyalty 
+        })
         .eq('id', dbUser.id)
     }
+    
+    setBattery(newBattery)
+    setLoyaltyPoints(newLoyalty)
+    setBalance(prev => prev - numAmount)  // списываем с реального счёта
+    
+    alert(`✅ Перевод на ${amount} BYN выполнен!\n+${earnedBattery}🔋 +${earnedLoyalty}⭐`)
   }
 
-  const handlePurchase = async () => {
-    const amount = Number(purchaseAmount)
-    if (amount <= 0) {
-      alert('Введите сумму покупки')
-      return
-    }
+  const handleErip = async () => {
+    const amount = prompt('Введите сумму оплаты ЕРИП (BYN):')
+    if (!amount || amount <= 0) return
     
-    const category = categories[selectedCategory]
+    const numAmount = Number(amount)
+    const earnedBattery = calculateBattery(numAmount) + 1  // +1 бонус за ЕРИП
+    const earnedLoyalty = Math.floor(numAmount * 3)  // x3 балла за ЕРИП
     
-    const shopNames = {
-      cafe: ['Кафе "Уют"', 'Starbucks', 'Wolt', 'Якитория'],
-      transport: ['Метрополитен', 'Яндекс.Такси', 'АЗС Белнефтехим'],
-      erip: ['МТС', 'A1', 'Интернет ByFly', 'ЖКХ']
-    }
-    const randomShop = shopNames[selectedCategory][Math.floor(Math.random() * shopNames[selectedCategory].length)]
+    const newBattery = battery + earnedBattery
+    const newLoyalty = loyaltyPoints + earnedLoyalty
     
-    const mccMap = {
-      cafe: ['5812', '5814'],
-      transport: ['4111', '5541'],
-      erip: ['4814', '4900']
-    }
-    const randomMcc = mccMap[selectedCategory][Math.floor(Math.random() * mccMap[selectedCategory].length)]
-    
-    const earned = Math.round(amount * category.multiplier)
-    await updateLastSeen()
-    const uniqueCode = `MTB-${randomMcc}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
-    
-    if (!dbUser || dbUser.id === 'local') {
-      const newTransaction = {
-        id: 'local-' + Date.now(),
-        title: randomShop,
-        amount,
-        category: selectedCategory,
-        mcc: randomMcc,
-        icon: category.icon,
-        earned,
-        code: uniqueCode,
-        used: false,
-        created_at: new Date().toISOString()
-      }
-      setBankTransactions(prev => [newTransaction, ...prev].slice(0, 20))
-      alert(`✅ Покупка добавлена (демо)!\nКод: ${uniqueCode}`)
-    } else {
-      const { data: newTransaction } = await supabase
-        .from('transactions')
-        .insert({
-          user_id: dbUser.id,
-          title: randomShop,
-          amount,
-          category: selectedCategory,
-          mcc: randomMcc,
-          icon: category.icon,
-          earned,
-          code: uniqueCode,
-          used: false
+    if (dbUser && dbUser.id !== 'local') {
+      await supabase
+        .from('users')
+        .update({ 
+          battery: newBattery,
+          loyalty_points: newLoyalty 
         })
-        .select()
-        .single()
-      
-      setBankTransactions(prev => [newTransaction, ...prev].slice(0, 20))
-      alert(`✅ Покупка добавлена!\nКод: ${uniqueCode}`)
+        .eq('id', dbUser.id)
     }
     
-    setShowPurchaseModal(false)
-    setPurchaseAmount('')
+    setBattery(newBattery)
+    setLoyaltyPoints(newLoyalty)
+    setBalance(prev => prev - numAmount)
+    
+    alert(`✅ Оплата ЕРИП на ${amount} BYN выполнена!\n+${earnedBattery}🔋 +${earnedLoyalty}⭐ (бонус x3)`)
+  }
+
+  const handleSave = async () => {
+    const amount = prompt('Введите сумму пополнения вклада (BYN):')
+    if (!amount || amount <= 0) return
+    
+    const numAmount = Number(amount)
+    const earnedBattery = calculateBattery(numAmount) + 2  // +2 бонус за вклад
+    const earnedLoyalty = Math.floor(numAmount * 5)  // x5 баллов за вклад
+    
+    const newBattery = battery + earnedBattery
+    const newLoyalty = loyaltyPoints + earnedLoyalty
+    
+    if (dbUser && dbUser.id !== 'local') {
+      await supabase
+        .from('users')
+        .update({ 
+          battery: newBattery,
+          loyalty_points: newLoyalty 
+        })
+        .eq('id', dbUser.id)
+    }
+    
+    setBattery(newBattery)
+    setLoyaltyPoints(newLoyalty)
+    setBalance(prev => prev - numAmount)
+    
+    alert(`✅ Вклад пополнен на ${amount} BYN!\n+${earnedBattery}🔋 +${earnedLoyalty}⭐ (бонус x5)`)
   }
 
   const handleBankCode = async (codeData) => {
@@ -495,14 +527,17 @@ useEffect(() => {
       return
     }
     
-    const earned = codeData.earned
-    const newFuel = fuel + earned
-    await updateLastSeen()
+    const earnedBattery = calculateBattery(codeData.amount)
+    const newBattery = battery + earnedBattery
+    const earnedLoyalty = Math.floor(codeData.amount * 2)  // 2 балла за 1 BYN
     
     if (dbUser && dbUser.id !== 'local') {
       await supabase
         .from('users')
-        .update({ fuel: newFuel })
+        .update({ 
+          battery: newBattery,
+          loyalty_points: loyaltyPoints + earnedLoyalty 
+        })
         .eq('id', dbUser.id)
       
       await supabase
@@ -511,22 +546,16 @@ useEffect(() => {
         .eq('id', codeData.id)
     }
     
-    setFuel(newFuel)
+    setBattery(newBattery)
+    setLoyaltyPoints(prev => prev + earnedLoyalty)
     setBankTransactions(prev => 
       prev.map(t => t.id === codeData.id ? { ...t, used: true } : t)
     )
     
-    const newHunger = Math.min(100, character.hunger + 10)
-    setCharacter(prev => ({ ...prev, hunger: newHunger }))
-    
-    if (dbUser && dbUser.id !== 'local') {
-      await supabase
-        .from('users')
-        .update({ hunger: newHunger })
-        .eq('id', dbUser.id)
-    }
-    
-    setShowEarned({ amount: earned, category: codeData.title })
+    setShowEarned({ 
+      amount: `+${earnedBattery}🔋 +${earnedLoyalty}⭐`, 
+      category: codeData.title 
+    })
     setTimeout(() => setShowEarned(null), 1200)
     
     setShowBankWidget(false)
@@ -538,25 +567,25 @@ useEffect(() => {
     
     if (!mascot || !userId) return
     
-    const cost = mascot.level * 100 + 50
+    const cost = mascot.level * 100 + 50  // стоимость в баллах лояльности
     
-    if (fuel < cost) {
-      alert('Недостаточно топлива')
+    if (loyaltyPoints < cost) {
+      alert('Недостаточно баллов лояльности')
       return
     }
     
-    const newFuel = fuel - cost
+    const newLoyaltyPoints = loyaltyPoints - cost
     const newLevel = mascot.level + 1
     
     // Обновляем в Supabase
     await supabase
       .from('user_mascots')
       .update({ level: newLevel })
-      .eq('user_id', dbUser.id)
+      .eq('user_id', userId)
       .eq('mascot_id', mascotId)
     
     // Обновляем локально
-    setFuel(newFuel)
+    setLoyaltyPoints(newLoyaltyPoints)
     setUserMascots(prev => prev.map(m => 
       m.mascot_id === mascotId ? { ...m, level: newLevel } : m
     ))
@@ -565,7 +594,15 @@ useEffect(() => {
       setActiveMascot(prev => ({ ...prev, level: newLevel }))
     }
     
-    alert(`🎉 ${mascotInfo[mascotId].name} достиг уровня ${newLevel}!`)
+    // Сохраняем баллы в таблице users
+    if (dbUser && dbUser.id !== 'local') {
+      await supabase
+        .from('users')
+        .update({ loyalty_points: newLoyaltyPoints })
+        .eq('id', userId)
+    }
+    
+    alert(`🎉 ${mascotNames[mascotId]} достиг уровня ${newLevel}!`)
   }
 
   if (loading) {
@@ -597,16 +634,16 @@ useEffect(() => {
         {currentScreen === 'home' ? (
           <>
             <Character 
-              hunger={character.hunger}
-              activity={character.activity}
               level={currentLevel}
               upgrades={upgrades}
               mascot={activeMascot?.mascot_id || 'lion'}
               mascotLevel={activeMascot?.level || 1}
               onAvatarClick={() => setShowMascotSwitcher(true)}
+              battery={battery}
+              maxBattery={maxBattery}
             />
             
-            <FuelCard fuel={fuel} />
+            <BalanceCard balance={balance}/>
             
             <div className="level-section">
               <div className="level-header">
@@ -618,9 +655,18 @@ useEffect(() => {
               </div>
             </div>
             
-            <button className="purchase-main-button" onClick={() => setShowPurchaseModal(true)}>
-              🛒 Совершить покупку
-            </button>
+            {/* Вместо <button className="purchase-main-button" onClick={...}> */}
+            <div className="bank-actions">
+              <button className="bank-action-btn transfer" onClick={handleTransfer}>
+                💸 Перевести
+              </button>
+              <button className="bank-action-btn erip" onClick={handleErip}>
+                📱 Оплатить
+              </button>
+              <button className="bank-action-btn save" onClick={handleSave}>
+                🏦 Вклад
+              </button>
+            </div>
             
             <button className="bank-nav-button" onClick={() => setShowBankWidget(true)}>
               🏦 Мои операции (МТБанк)

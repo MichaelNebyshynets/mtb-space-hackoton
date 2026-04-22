@@ -452,3 +452,49 @@
 .swipe-nav-button:active {
   transform: scale(0.98);
 }
+
+.bank-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  max-width: 380px;
+  margin: 16px 0;
+}
+
+.bank-action-btn {
+  flex: 1;
+  padding: 14px 8px;
+  border: none;
+  border-radius: 16px;
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bank-action-btn.transfer {
+  background: linear-gradient(135deg, #4ecdc4, #2ecc71);
+}
+
+.bank-action-btn.erip {
+  background: linear-gradient(135deg, #ffa502, #ff6b6b);
+}
+
+.bank-action-btn.save {
+  background: linear-gradient(135deg, #9b59b6, #8e44ad);
+}
+
+.bank-action-btn:active {
+  transform: scale(0.96);
+}
+
+.loyalty-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+  color: #ffe66d;
+  font-weight: bold;
+}

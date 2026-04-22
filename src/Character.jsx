@@ -1,43 +1,45 @@
 import './Character.css'
-import BankerBot from './BankerBot'
 import MascotDisplay from './MascotDisplay'
 
-function Character({ hunger, activity, level, upgrades, mascot, mascotLevel, onAvatarClick}) {
-  const getMood = () => {
-    if (hunger < 30) return 'sad'
-    if (hunger < 60) return 'neutral'
-    return 'happy'
+function Character({ battery, maxBattery, level, mascot, mascotLevel, onAvatarClick }) {
+  const batteryPercent = Math.min(100, (battery / maxBattery) * 100)
+  
+  const getBatteryColor = () => {
+    if (battery === 0) return '#ff6b6b'
+    if (battery < maxBattery) return '#ffa502'
+    return '#2ecc71'
   }
-  
-  const mood = getMood()
-  const moodText = { happy: 'Сытый и довольный', neutral: 'Всё в порядке', sad: 'Хочет есть...' }[mood]
-  
+
   return (
     <div className="character-card">
-      <div className="character-avatar-clickable" onClick={onAvatarClick} style={{ cursor: 'pointer' }}>
+      <div 
+        className="character-avatar clickable" 
+        onClick={onAvatarClick}
+      >
         <MascotDisplay mascot={mascot} level={mascotLevel || level} size="large" />
         <div className="character-level">Ур. {mascotLevel || level}</div>
       </div>
       
-      <div className="character-stats">
-        <div className="stat">
-          <span className="stat-label">🍖 Сытость</span>
-          <div className="stat-bar">
-            <div className="stat-fill hunger" style={{ width: `${hunger}%` }} />
-          </div>
-          <span className="stat-value">{Math.round(hunger)}%</span>
+      <div className="battery-section">
+        <div className="battery-header">
+          <span className="battery-label">🔋 Батарейки</span>
+          <span className="battery-value">
+            {battery} {battery > maxBattery && <span className="battery-bonus">(+{battery - maxBattery})</span>}
+          </span>
         </div>
-        
-        <div className="stat">
-          <span className="stat-label">⚡ Активность</span>
-          <div className="stat-bar">
-            <div className="stat-fill activity" style={{ width: `${activity}%` }} />
-          </div>
-          <span className="stat-value">{Math.round(activity)}%</span>
+        <div className="battery-bar">
+          <div 
+            className="battery-fill" 
+            style={{ 
+              width: `${batteryPercent}%`,
+              backgroundColor: getBatteryColor()
+            }} 
+          />
         </div>
+        <p className="battery-hint">
+          ⚡ 1 игра = 1 🔋 • +1 за 10 BYN • +1/час
+        </p>
       </div>
-      
-      <p className="character-mood">{moodText}</p>
     </div>
   )
 }

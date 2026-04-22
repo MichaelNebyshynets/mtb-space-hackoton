@@ -1,0 +1,45 @@
+.balance-card {
+  background: linear-gradient(145deg, #1a1a2e, #16213e);
+  border-radius: 20px;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
+  border: 1px solid rgba(78, 205, 196, 0.2);
+}
+
+.balance-icon {
+  font-size: 28px;
+}
+
+.balance-value {
+  font-size: 28px;
+  font-weight: bold;
+  color: #2ecc71;
+  line-height: 1;
+  word-break: break-word;
+}
+
+.balance-label {
+  color: #8a8aa3;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 12px;
+  margin-left: auto;
+}
+
+.animate-pop {
+  animation: balancePop 0.25s ease-out;
+}
+
+@keyframes balancePop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); color: #4ecdc4; }
+  100% { transform: scale(1); }
+}
