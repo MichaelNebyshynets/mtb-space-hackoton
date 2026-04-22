@@ -25,9 +25,9 @@ function renderBoard() {
             if (cellType === 0) {
                 cell.textContent = board[r][c];
             } else if (cellType === 1) {
-                cell.textContent = '⬌';  // горизонтальная двойная стрела
+                cell.textContent = '⇄';  // простая горизонтальная стрелка
             } else if (cellType === 2) {
-                cell.textContent = '⬍';  // вертикальная двойная стрела
+                cell.textContent = '⇅';  // простая вертикальная стрелка
             } else if (cellType === 3) {
                 cell.textContent = '✚';
             } else if (cellType === 4) {
