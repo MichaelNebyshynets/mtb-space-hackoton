@@ -1,5 +1,6 @@
 import './Character.css'
 import BankerBot from './BankerBot'
+import MascotDisplay from './MascotDisplay'
 
 function Character({ hunger, activity, level, upgrades, mascot, mascotLevel}) {
   const getMood = () => {
