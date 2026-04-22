@@ -455,6 +455,7 @@ function App() {
         <h1>🚀 MTB Space Station</h1>
         <p className="user-greeting">
           Привет, {userName}!
+          <button onClick={handleLogout} style={{ marginLeft: 10, background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer' }}>Выйти</button>
         </p>
       </header>
       
