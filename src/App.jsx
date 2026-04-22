@@ -49,12 +49,13 @@ function App() {
       if (savedUser) {
         setSession(JSON.parse(savedUser))
       }
-      setLoading(false)
+      //setLoading(false)
     }, [])
 
     const handleLogin = (user) => {
       localStorage.setItem('mtb_user', JSON.stringify(user))
       setSession(user)
+      //setLoading(true)
     }
 
     const handleLogout = () => {
@@ -62,14 +63,13 @@ function App() {
       setSession(null)
     }
 
-    // Если не залогинен — показываем PhoneAuth
-    if (!session) {
-      return <PhoneAuth onLogin={handleLogin} />
-    }
-
+    
     // Загрузка данных пользователя из Supabase
     useEffect(() => {
-      if (!session) return
+      if (!session) {
+        setLoading(false)
+        return
+      }
       
       const loadUserData = async () => {
         const { data: userData } = await supabase
@@ -93,6 +93,12 @@ function App() {
       
       loadUserData()
     }, [session])
+
+    // Если не залогинен — показываем PhoneAuth
+    if (!session) {
+      return <PhoneAuth onLogin={handleLogin} />
+    }
+
 
   // Инициализация Telegram и загрузка из Supabase
   // useEffect(() => {
