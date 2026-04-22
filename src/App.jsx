@@ -4,9 +4,13 @@ import FuelCard from './FuelCard'
 import UpgradeShop from './UpgradeShop'
 import BankWidget from './BankWidget'
 import Character from './Character'
+import PhoneAuth from './PhoneAuth'
 import { supabase } from './supabase'
 
 function App() {
+  const [sessions, setSessions] = useState(null)
+  const [loading, setLoading] = useState(true)
+
   const [fuel, setFuel] = useState(0)
   const [telegramUser, setTelegramUser] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -38,157 +42,210 @@ function App() {
     erip: { name: 'ЕРИП', multiplier: 3, icon: '📱' },
   }
 
-  // Инициализация Telegram и загрузка из Supabase
-  useEffect(() => {
-    const tg = window.Telegram?.WebApp
-    
-    const initApp = async () => {
-      let user = null
-      
-      if (tg) {
-        tg.expand()
-        
-        if (tg.initData) {
-          const params = new URLSearchParams(tg.initData)
-          const userParam = params.get('user')
-          if (userParam) {
-            try { user = JSON.parse(userParam) } catch (e) {}
-          }
-        }
-        if (!user) user = tg.initDataUnsafe?.user
-        
-        if (user) {
-          setTelegramUser(user)
-        } else {
-          setTelegramUser({ id: '999', first_name: 'Гость' })
-          user = { id: '999', first_name: 'Гость' }
-        }
-        
-        tg.ready()
-      } else {
-        setTelegramUser({ id: '999', first_name: 'Гость (браузер)' })
-        user = { id: '999', first_name: 'Гость' }
+
+
+
+    useEffect(() => {
+      const savedUser = localStorage.getItem('mtb_user')
+      if (savedUser) {
+        setSession(JSON.parse(savedUser))
       }
+      setLoading(false)
+    }, [])
+
+    const handleLogin = (user) => {
+      localStorage.setItem('mtb_user', JSON.stringify(user))
+      setSession(user)
+    }
+
+    const handleLogout = () => {
+      localStorage.removeItem('mtb_user')
+      setSession(null)
+    }
+
+    // Если не залогинен — показываем PhoneAuth
+    if (!session) {
+      return <PhoneAuth onLogin={handleLogin} />
+    }
+
+    // Загрузка данных пользователя из Supabase
+    useEffect(() => {
+      if (!session) return
       
-      // Работа с Supabase
-      if (user) {
-        const telegramId = String(user.id)
-        
-        let { data: existingUser, error } = await supabase
+      const loadUserData = async () => {
+        const { data: userData } = await supabase
           .from('users')
           .select('*')
-          .eq('telegram_id', telegramId)
+          .eq('id', session.id)
           .maybeSingle()
         
-        if (error) {
-          console.error('Ошибка при поиске пользователя:', error)
-        }
-        
-        const now = new Date()
-        
-        if (!existingUser) {
-          const { data: newUser, error: createError } = await supabase
-            .from('users')
-            .insert({
-              telegram_id: telegramId,
-              first_name: user.first_name || 'Гость',
-              last_name: user.last_name || null,
-              username: user.username || null,
-              fuel: 100,
-              hunger: 100,
-              activity: 100,
-              last_seen: now
-            })
-            .select()
-            .single()
-          
-          if (createError) {
-            console.error('Ошибка при создании пользователя:', createError)
-            setDbUser({ id: 'local', telegram_id: telegramId })
-            setFuel(100)
-            setCharacter({ hunger: 100, activity: 100 })
-            setLoading(false)
-            return
-          }
-          
-          existingUser = newUser
-        } else {
-          const lastSeen = new Date(existingUser.last_seen || existingUser.created_at)
-          const minutesPassed = Math.floor((now - lastSeen) / (1000 * 60))
-          
-          const hungerLoss = Math.min(minutesPassed, 100)
-          const activityLoss = Math.min(minutesPassed * 0.5, 100)
-          
-          const newHunger = Math.max(0, (existingUser.hunger || 100) - hungerLoss)
-          const newActivity = Math.max(0, (existingUser.activity || 100) - activityLoss)
-          
-          if (newHunger !== existingUser.hunger || newActivity !== existingUser.activity) {
-            const { error: updateError } = await supabase
-              .from('users')
-              .update({ 
-                hunger: newHunger, 
-                activity: newActivity,
-                last_seen: now
-              })
-              .eq('id', existingUser.id)
-            
-            if (updateError) {
-              console.error('Ошибка обновления:', updateError)
-            }
-            
-            existingUser.hunger = newHunger
-            existingUser.activity = newActivity
-          } else {
-            await supabase
-              .from('users')
-              .update({ last_seen: now })
-              .eq('id', existingUser.id)
-          }
-        }
-        
-        setDbUser(existingUser)
-        setFuel(existingUser.fuel || 100)
-        setCharacter({
-          hunger: existingUser.hunger || 100,
-          activity: existingUser.activity || 100
-        })
-        
-        // Загружаем транзакции
-        const { data: transactions } = await supabase
-          .from('transactions')
-          .select('*')
-          .eq('user_id', existingUser.id)
-          .order('created_at', { ascending: false })
-          .limit(20)
-        
-        setBankTransactions(transactions || [])
-        
-        // Загружаем прокачки
-        const { data: dbUpgrades } = await supabase
-          .from('upgrades')
-          .select('*')
-          .eq('user_id', existingUser.id)
-        
-        if (dbUpgrades && dbUpgrades.length > 0) {
-          const newUpgrades = { 
-            armor: { level: 1, name: 'Броня', baseCost: 100 }, 
-            engine: { level: 1, name: 'Двигатель', baseCost: 200 }, 
-            scanner: { level: 1, name: 'Сканер', baseCost: 150 } 
-          }
-          dbUpgrades.forEach(u => {
-            if (newUpgrades[u.upgrade_id]) {
-              newUpgrades[u.upgrade_id].level = u.level
-            }
+        if (userData) {
+          setDbUser(userData)
+          setFuel(userData.fuel || 100)
+          setCharacter({
+            hunger: userData.hunger || 100,
+            activity: userData.activity || 100
           })
-          setUpgrades(newUpgrades)
+          // ... загрузи остальные данные
         }
+        
+        setLoading(false)
       }
       
-      setLoading(false)
-    }
+      loadUserData()
+    }, [session])
+
+  // Инициализация Telegram и загрузка из Supabase
+  // useEffect(() => {
+  //   const tg = window.Telegram?.WebApp
     
-    initApp()
-  }, [])
+  //   const initApp = async () => {
+  //     let user = null
+      
+  //     if (tg) {
+  //       tg.expand()
+        
+  //       if (tg.initData) {
+  //         const params = new URLSearchParams(tg.initData)
+  //         const userParam = params.get('user')
+  //         if (userParam) {
+  //           try { user = JSON.parse(userParam) } catch (e) {}
+  //         }
+  //       }
+  //       if (!user) user = tg.initDataUnsafe?.user
+        
+  //       if (user) {
+  //         setTelegramUser(user)
+  //       } else {
+  //         setTelegramUser({ id: '999', first_name: 'Гость' })
+  //         user = { id: '999', first_name: 'Гость' }
+  //       }
+        
+  //       tg.ready()
+  //     } else {
+  //       setTelegramUser({ id: '999', first_name: 'Гость (браузер)' })
+  //       user = { id: '999', first_name: 'Гость' }
+  //     }
+      
+  //     // Работа с Supabase
+  //     if (user) {
+  //       const telegramId = String(user.id)
+        
+  //       let { data: existingUser, error } = await supabase
+  //         .from('users')
+  //         .select('*')
+  //         .eq('telegram_id', telegramId)
+  //         .maybeSingle()
+        
+  //       if (error) {
+  //         console.error('Ошибка при поиске пользователя:', error)
+  //       }
+        
+  //       const now = new Date()
+        
+  //       if (!existingUser) {
+  //         const { data: newUser, error: createError } = await supabase
+  //           .from('users')
+  //           .insert({
+  //             telegram_id: telegramId,
+  //             first_name: user.first_name || 'Гость',
+  //             last_name: user.last_name || null,
+  //             username: user.username || null,
+  //             fuel: 100,
+  //             hunger: 100,
+  //             activity: 100,
+  //             last_seen: now
+  //           })
+  //           .select()
+  //           .single()
+          
+  //         if (createError) {
+  //           console.error('Ошибка при создании пользователя:', createError)
+  //           setDbUser({ id: 'local', telegram_id: telegramId })
+  //           setFuel(100)
+  //           setCharacter({ hunger: 100, activity: 100 })
+  //           setLoading(false)
+  //           return
+  //         }
+          
+  //         existingUser = newUser
+  //       } else {
+  //         const lastSeen = new Date(existingUser.last_seen || existingUser.created_at)
+  //         const minutesPassed = Math.floor((now - lastSeen) / (1000 * 60))
+          
+  //         const hungerLoss = Math.min(minutesPassed, 100)
+  //         const activityLoss = Math.min(minutesPassed * 0.5, 100)
+          
+  //         const newHunger = Math.max(0, (existingUser.hunger || 100) - hungerLoss)
+  //         const newActivity = Math.max(0, (existingUser.activity || 100) - activityLoss)
+          
+  //         if (newHunger !== existingUser.hunger || newActivity !== existingUser.activity) {
+  //           const { error: updateError } = await supabase
+  //             .from('users')
+  //             .update({ 
+  //               hunger: newHunger, 
+  //               activity: newActivity,
+  //               last_seen: now
+  //             })
+  //             .eq('id', existingUser.id)
+            
+  //           if (updateError) {
+  //             console.error('Ошибка обновления:', updateError)
+  //           }
+            
+  //           existingUser.hunger = newHunger
+  //           existingUser.activity = newActivity
+  //         } else {
+  //           await supabase
+  //             .from('users')
+  //             .update({ last_seen: now })
+  //             .eq('id', existingUser.id)
+  //         }
+  //       }
+        
+  //       setDbUser(existingUser)
+  //       setFuel(existingUser.fuel || 100)
+  //       setCharacter({
+  //         hunger: existingUser.hunger || 100,
+  //         activity: existingUser.activity || 100
+  //       })
+        
+  //       // Загружаем транзакции
+  //       const { data: transactions } = await supabase
+  //         .from('transactions')
+  //         .select('*')
+  //         .eq('user_id', existingUser.id)
+  //         .order('created_at', { ascending: false })
+  //         .limit(20)
+        
+  //       setBankTransactions(transactions || [])
+        
+  //       // Загружаем прокачки
+  //       const { data: dbUpgrades } = await supabase
+  //         .from('upgrades')
+  //         .select('*')
+  //         .eq('user_id', existingUser.id)
+        
+  //       if (dbUpgrades && dbUpgrades.length > 0) {
+  //         const newUpgrades = { 
+  //           armor: { level: 1, name: 'Броня', baseCost: 100 }, 
+  //           engine: { level: 1, name: 'Двигатель', baseCost: 200 }, 
+  //           scanner: { level: 1, name: 'Сканер', baseCost: 150 } 
+  //         }
+  //         dbUpgrades.forEach(u => {
+  //           if (newUpgrades[u.upgrade_id]) {
+  //             newUpgrades[u.upgrade_id].level = u.level
+  //           }
+  //         })
+  //         setUpgrades(newUpgrades)
+  //       }
+  //     }
+      
+  //     setLoading(false)
+  //   }
+    
+  //   initApp()
+  // }, [])
 
   const userName = telegramUser?.first_name || 'Гость'
   const currentLevel = Math.floor(fuel / 500) + 1
@@ -511,4 +568,4 @@ function App() {
   )
 }
 
-export default App
+export default App  
