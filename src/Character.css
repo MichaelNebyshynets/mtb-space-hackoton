@@ -5,7 +5,7 @@
   margin-bottom: 12px;
   border: 1px solid rgba(0, 0, 0, 0.05);
   width: 100%;
-  max-width: 380px;
+  max-width: 360px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
@@ -109,6 +109,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 6px;
+  flex-wrap: wrap;
 }
 
 .battery-label {
@@ -120,7 +121,8 @@
 .battery-value {
   color: #ffffff;
   font-weight: bold;
-  font-size: 14px;
+  font-size: 13px;
+  white-space: nowrap;
 }
 
 .battery-bar {
