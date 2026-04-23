@@ -394,12 +394,19 @@
 
 .card-balance {
   position: absolute;
-  bottom: 16px;
+  bottom: 20px;
   left: 20px;
   color: white;
-  font-size: 24px;
-  font-weight: bold;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  font-size: 26px;
+  font-weight: 800;
+  text-shadow: 
+    -1px -1px 0 rgba(0, 0, 0, 0.5),
+    1px -1px 0 rgba(0, 0, 0, 0.5),
+    -1px 1px 0 rgba(0, 0, 0, 0.5),
+    1px 1px 0 rgba(0, 0, 0, 0.5),
+    0 2px 4px rgba(0, 0, 0, 0.4);
+  letter-spacing: 0.5px;
+  -webkit-text-stroke: 1px rgba(0, 0, 0, 0.3);
 }
 
 /* Нижний бар */
@@ -491,4 +498,58 @@
 .history-date {
   color: #6B8CAE;
   font-size: 12px;
+}
+
+
+.shop-modal {
+  max-width: 400px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.shop-modal .upgrade-card {
+  padding: 10px;
+  gap: 8px;
+}
+
+.shop-modal .mascot-shop-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.shop-modal .upgrade-name {
+  font-size: 13px;
+}
+
+.shop-modal .upgrade-level {
+  font-size: 11px;
+}
+
+.shop-modal .ability-desc {
+  font-size: 11px;
+  display: none; /* скрываем описание для компактности */
+}
+
+.shop-modal .upgrade-uses {
+  font-size: 11px;
+}
+
+.shop-modal .upgrade-cost {
+  font-size: 12px;
+}
+
+.shop-modal .upgrade-button {
+  padding: 8px 10px;
+  font-size: 12px;
+  min-width: 70px;
+}
+
+.shop-modal .shop-header h2 {
+  font-size: 18px;
+}
+
+.shop-modal .shop-footer {
+  font-size: 11px;
+  padding: 8px;
 }

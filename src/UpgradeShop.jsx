@@ -1,94 +1,154 @@
 import './UpgradeShop.css'
 
-// Картинки для отображения в магазине
-const mascotIcons = {
-  lion: '/mascots/lion-level-1.png',
-  eagle: '/mascots/eagle-level-1.png',
-  bear: '/mascots/bear-level-1.png',
-  stork: '/mascots/stork-level-1.png',
-  cat: '/mascots/cat-level-1.png',
+// Картинки для каждого уровня маскотов
+const mascotImages = {
+  lion: {
+    1: '/mascots/lion-level-1.png',
+    2: '/mascots/lion-level-2.png',
+    3: '/mascots/lion-level-3.png',
+  },
+  eagle: {
+    1: '/mascots/eagle-level-1.png',
+    2: '/mascots/eagle-level-2.png',
+    3: '/mascots/eagle-level-3.png',
+  },
+  bear: {
+    1: '/mascots/bear-level-1.png',
+    2: '/mascots/bear-level-2.png',
+    3: '/mascots/bear-level-3.png',
+  },
+  stork: {
+    1: '/mascots/stork-level-1.png',
+    2: '/mascots/stork-level-2.png',
+    3: '/mascots/stork-level-3.png',
+  },
+  cat: {
+    1: '/mascots/cat-level-1.png',
+    2: '/mascots/cat-level-2.png',
+    3: '/mascots/cat-level-3.png',
+  },
+}
+
+// Получить картинку в зависимости от уровня
+const getMascotImage = (mascotId, level) => {
+  const levels = mascotImages[mascotId]
+  if (!levels) return '/mascots/lion-level-1.png'
+  if (level >= 5) return levels[3]
+  if (level >= 3) return levels[2]
+  return levels[1]
 }
 
 const mascotInfo = {
-  lion: { name: 'Лев', color: '#ffa502', description: 'Сильный и быстрый, наносит большой урон' },
-  eagle: { name: 'Орёл', color: '#4ecdc4', description: 'Зоркий глаз, видит скрытые бонусы' },
-  bear: { name: 'Медведь', color: '#8B4513', description: 'Мощный и выносливый, сокрушает защиту' },
-  stork: { name: 'Аист', color: '#ff6b6b', description: 'Приносит удачу и дополнительные ходы' },
-  cat: { name: 'Кот', color: '#9b59b6', description: 'Ловкий и скрытный, уклоняется от атак' },
+  lion: { 
+    name: 'Лев', 
+    color: '#ffa502', 
+    ability: '🦁 Рык', 
+    abilityDesc: 'Уничтожает все камни одного цвета',
+    usesText: (lvl) => `${lvl} раз(а) за игру`
+  },
+  eagle: { 
+    name: 'Орёл', 
+    color: '#4ecdc4', 
+    ability: '🦅 Полёт', 
+    abilityDesc: 'Меняет местами любые 2 камня',
+    usesText: (lvl) => `${lvl} раз(а) за игру`
+  },
+  bear: { 
+    name: 'Медведь', 
+    color: '#8B4513', 
+    ability: '🐻 Мощь', 
+    abilityDesc: 'Уничтожает ряд и столбец',
+    usesText: (lvl) => `${lvl} раз(а) за игру`
+  },
+  stork: { 
+    name: 'Аист', 
+    color: '#ff6b6b', 
+    ability: '🐦 Доставка', 
+    abilityDesc: 'Добавляет 3 хода',
+    usesText: (lvl) => `${lvl} раз(а) за игру`
+  },
+  cat: { 
+    name: 'Кот', 
+    color: '#9b59b6', 
+    ability: '😺 Ловкость', 
+    abilityDesc: 'Перемешивает доску',
+    usesText: (lvl) => `${lvl} раз(а) за игру`
+  },
 }
 
-function UpgradeShop({ fuel, activeMascot, onUpgrade, onBack }) {
-  const mascot = activeMascot || { mascot_id: 'lion', level: 1, experience: 0 }
-  const info = mascotInfo[mascot.mascot_id]
-  
-  // Стоимость прокачки зависит от текущего уровня
-  const upgradeCost = mascot.level * 100 + 50
-  const canAfford = fuel >= upgradeCost
-  const maxLevel = 10
-  
+function UpgradeShop({ loyaltyPoints, userMascots, activeMascotId, onUpgrade, onBack }) {
   return (
     <div className="upgrade-shop">
       <div className="shop-header">
         <button className="back-button" onClick={onBack}>← Назад</button>
         <h2>🏪 Прокачка</h2>
-        <div className="shop-fuel">🚀 {fuel}</div>
+        <div className="shop-fuel">⭐ {loyaltyPoints}</div>
       </div>
       
-      {/* Инфо о текущем маскоте */}
-      <div className="active-mascot-info" style={{ borderColor: info.color }}>
-        <img 
-          src={mascotIcons[mascot.mascot_id]} 
-          alt={info.name} 
-          className="mascot-shop-icon" 
-        />
-        <div className="mascot-shop-details">
-          <h3>{info.name}</h3>
-          <div className="mascot-shop-stats">
-            <span>Ур. {mascot.level}</span>
-            <span>XP: {mascot.experience}</span>
-          </div>
-        </div>
+      <div className="upgrades-list">
+        {userMascots.map(mascot => {
+          const info = mascotInfo[mascot.mascot_id]
+          const cost = mascot.level * 100 + 50
+          const canAfford = loyaltyPoints >= cost
+          const maxLevel = 10
+          const isActive = mascot.mascot_id === activeMascotId
+          const imageSrc = getMascotImage(mascot.mascot_id, mascot.level)
+          
+          return (
+            <div 
+              key={mascot.mascot_id} 
+              className={`upgrade-card ${isActive ? 'active' : ''}`} 
+              style={{ borderColor: info.color }}
+            >
+              <div className="upgrade-mascot-image">
+                <img 
+                  src={imageSrc} 
+                  alt={info.name} 
+                  className="mascot-shop-icon" 
+                />
+              </div>
+              
+              <div className="upgrade-info">
+                <div className="upgrade-name">
+                  {info.name}
+                  {isActive && <span className="active-badge">✓ Активен</span>}
+                  <span className="upgrade-level">Ур. {mascot.level}</span>
+                </div>
+                
+                <div className="upgrade-ability">
+                  <span className="ability-icon">{info.ability}</span>
+                  <span className="ability-desc">{info.abilityDesc}</span>
+                </div>
+                
+                <div className="upgrade-uses">
+                  Использований: <strong>{info.usesText(mascot.level)}</strong>
+                </div>
+                
+                {mascot.level < maxLevel && (
+                  <div className="upgrade-cost">
+                    Стоимость: {cost} ⭐
+                  </div>
+                )}
+              </div>
+              
+              {mascot.level < maxLevel ? (
+                <button
+                  className={`upgrade-button ${canAfford ? 'afford' : 'cannot-afford'}`}
+                  onClick={() => onUpgrade(mascot.mascot_id)}
+                  disabled={!canAfford}
+                >
+                  Прокачать
+                </button>
+              ) : (
+                <div className="max-level">MAX</div>
+              )}
+            </div>
+          )
+        })}
       </div>
-      
-      {/* Описание персонажа */}
-      <div className="mascot-description">
-        <p>{info.description}</p>
-      </div>
-      
-      {/* Карточка прокачки */}
-      {mascot.level < maxLevel ? (
-        <div className="upgrade-main-card" style={{ borderColor: info.color }}>
-          <div className="upgrade-main-icon">⬆️</div>
-          <div className="upgrade-main-info">
-            <div className="upgrade-main-title">Повысить уровень</div>
-            <div className="upgrade-main-desc">
-              Уровень {mascot.level} → {mascot.level + 1}
-            </div>
-            <div className="upgrade-main-bonus">
-              +10% к характеристикам в игре
-            </div>
-            <div className="upgrade-main-cost">
-              Стоимость: {upgradeCost} 🚀
-            </div>
-          </div>
-          <button
-            className={`upgrade-main-button ${canAfford ? 'afford' : 'cannot-afford'}`}
-            onClick={() => onUpgrade(mascot.mascot_id)}
-            disabled={!canAfford}
-          >
-            Прокачать
-          </button>
-        </div>
-      ) : (
-        <div className="max-level-card">
-          <div className="max-level-icon">🏆</div>
-          <h3>Максимальный уровень!</h3>
-          <p>{info.name} достиг пика своей силы</p>
-        </div>
-      )}
       
       <div className="shop-footer">
-        <p>💡 Повышайте уровень персонажа, чтобы усилить его в игре «Три в ряд»</p>
+        <p>💡 Способности доступны в игре «Три в ряд». Уровень = количество использований за игру.</p>
       </div>
     </div>
   )

@@ -45,6 +45,7 @@ function App() {
 
   const [mode, setMode] = useState('bank')
 
+  const [showUpgradeStore, setShowUpgradeStore] = useState(false)
 
 
 
@@ -979,7 +980,7 @@ const handleTransfer = async () => {
               🎮 Играть (1 🔋)
             </button>
 
-            <button className="shop-nav-button" onClick={() => setCurrentScreen('shop')}>
+            <button className="shop-nav-button" onClick={() => setShowUpgradeStore(true)}>
               🏪 Магазин прокачек
             </button>
 
@@ -989,15 +990,6 @@ const handleTransfer = async () => {
           </>
         )}
 
-        {/* Экран магазина (открывается поверх Game Mode) */}
-        {currentScreen === 'shop' && (
-          <UpgradeShop 
-            fuel={fuel}
-            activeMascot={activeMascot}
-            onUpgrade={handleUpgrade}
-            onBack={() => setCurrentScreen('home')}
-          />
-        )}
       </main>
 
       {/* Нижний бар навигации */}
@@ -1119,6 +1111,20 @@ const handleTransfer = async () => {
 
       {showLeaderboard && (
         <Leaderboard onClose={() => setShowLeaderboard(false)} />
+      )}
+
+      {showUpgradeStore && (
+        <div className="modal-overlay" onClick={() => setShowUpgradeStore(false)}>
+          <div className="modal shop-modal" onClick={(e) => e.stopPropagation()}>
+            <UpgradeShop 
+              loyaltyPoints={loyaltyPoints}
+              userMascots={userMascots}
+              activeMascotId={activeMascot?.mascot_id}
+              onUpgrade={handleUpgrade}
+              onBack={() => setShowUpgradeStore(false)}
+            />
+          </div>
+        </div>
       )}
     </div>
   )
