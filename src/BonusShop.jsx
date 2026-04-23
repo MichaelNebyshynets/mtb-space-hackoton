@@ -3,11 +3,11 @@ import { supabase } from './supabase'
 import './BonusShop.css'
 
 const bonuses = [
-  { id: 'coffee', name: 'Бесплатный кофе', icon: '☕', cost: 500, description: 'Промокод в партнёрскую кофейню' },
-  { id: 'cashback', name: 'Кэшбек 5%', icon: '💸', cost: 1000, description: 'Повышенный кэшбек на неделю' },
+  { id: 'coffee', name: 'Бесплатный бургер', icon: '☕', cost: 500, description: 'Промокод в Burger King' },
+  { id: 'cashback', name: 'Кэшбек 5%', icon: '💸', cost: 1000, description: 'Повышенный кэшбек на одежду из Bershka' },
   { id: 'cinema', name: 'Билет в кино', icon: '🎬', cost: 1500, description: 'Скидка 50% на билет' },
   { id: 'taxi', name: 'Поездка на такси', icon: '🚖', cost: 2000, description: 'Промокод на 15 BYN' },
-  { id: 'oz', name: 'Сертификат OZ', icon: '🛍️', cost: 5000, description: '50 BYN на покупки' },
+  { id: 'oz', name: 'Бесплатная карта', icon: '🛍️', cost: 5000, description: 'Бесплатный выпуск новой карты МТБанка' },
 ]
 
 function BonusShop({ loyaltyPoints, dbUserId, onBuy, onClose, onUseBonus }) {

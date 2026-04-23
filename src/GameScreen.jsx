@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import './GameScreen.css'
 
-function GameScreen({ battery, onGameEnd, onClose }) {
+function GameScreen({ battery, mascotId, onGameEnd, onClose }) {
   const iframeRef = useRef(null)
   const [gameLoaded, setGameLoaded] = useState(false)
   const [gameEnded, setGameEnded] = useState(false)
@@ -48,7 +48,7 @@ function GameScreen({ battery, onGameEnd, onClose }) {
         <h3>🎮 Три в ряд</h3>
         <iframe
           ref={iframeRef}
-          src="/game/index.html"
+          src={`/game/index.html?mascot=${mascotId}`}
           className="game-iframe"
           title="Match-3 Game"
         />

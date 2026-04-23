@@ -205,3 +205,47 @@ body {
     0% { transform: scale(0); opacity: 0; }
     100% { transform: scale(1); opacity: 1; }
 }
+
+.abilities {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.ability-btn {
+    width: 50px;
+    height: 50px;
+    background: #58585a;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 0;
+}
+
+.ability-btn:hover {
+    background: #004c97;
+}
+
+.ability-btn.active {
+    background: #da291c;
+    box-shadow: 0 0 10px #da291c;
+}
+
+.ability-icon {
+    font-size: 20px;
+    line-height: 1;
+}
+
+.ability-count {
+    font-size: 12px;
+    line-height: 1;
+    font-weight: bold;
+}

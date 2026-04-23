@@ -1,9 +1,10 @@
 export class Match3Game {
-    constructor(rows, cols, colors, startMoves) {
+    constructor(rows, cols, colors, startMoves, abilitiesCols) {
         this.rows = rows;
         this.cols = cols;
         this.colors = colors;
         this.startMoves = startMoves;
+        this.abilitiesCols = abilitiesCols;
         
         this.board = [];
         this.types = [];

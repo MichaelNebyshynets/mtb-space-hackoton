@@ -1,9 +1,15 @@
 import { Match3Game } from './game.js';
 
-let game = new Match3Game(6, 6, ['₽', 'Б', '¥', '$', '€'], 20);
+const params = new URLSearchParams(window.location.search)
+const mascot = params.get('mascot') 
+
+console.log('🎮 Mascot from URL:', mascot)
+
+let game = new Match3Game(6, 6, ['₽', 'Б', '¥', '$', '€'], 20 + (mascot == "cat" ? 10 : 0), [3, 3, 3, 3, 3]);
 let selectedCell = null;
 let isAnimating = false;
 let touchStart = null;
+let activeAbility = null; // 'block', 'row', 'col', 'cross', 'special'
 
 function renderBoard() {
     const boardEl = document.getElementById('board');
@@ -105,12 +111,129 @@ function onTouchEnd(e) {
     touchStart = null;
 }
 
+function useAbility(r, c) {
+    if (activeAbility === 'block') {        
+        if(game.abilitiesCols[0] > 0) {
+            game.abilitiesCols[0]--;
+            // Способность перса — пока заглушка
+            if(mascot == "lion") {
+                const targetColor = game.board[r][c];
+                const otherColors = game.colors.filter(col => col !== targetColor);
+                const newColor = otherColors[Math.floor(Math.random() * otherColors.length)];
+                
+                for (let rr = 0; rr < game.rows; rr++) {
+                    for (let cc = 0; cc < game.cols; cc++) {
+                        if(game.board[rr][cc] == targetColor) {
+                            game.board[rr][cc] = newColor;
+                        }
+                    }
+                }
+
+            } else if(mascot == "eagle"){                
+                const targetColor = game.board[r][c];
+                
+                for (let rr = 0; rr < game.rows; rr++) {
+                    for (let cc = 0; cc < game.cols; cc++) {
+                        if(game.board[rr][cc] == targetColor && game.types[rr][cc] == 0) {
+                            game.types[rr][cc] = 3;
+                        }
+                    }
+                }
+            } else if(mascot == "bear"){
+                for (let rr = 0; rr < game.rows; rr++) {
+                    for (let cc = 0; cc < game.cols; cc++) {
+                        game.pop(rr, cc);
+                    }
+                }
+            } else if(mascot == "stork"){
+                    const colors = [];
+                    for (let rr = 0; rr < game.rows; rr++) {
+                        for (let cc = 0; cc < game.cols; cc++) {
+                            if (game.board[rr][cc] !== ' ') {
+                                colors.push(game.board[rr][cc]);
+                            }
+                        }
+                    }
+                    
+                    // Перемешиваем (Фишер-Йетс)
+                    for (let i = colors.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [colors[i], colors[j]] = [colors[j], colors[i]];
+                    }
+                    
+                    let idx = 0;
+                    for (let rr = 0; rr < game.rows; rr++) {
+                        for (let cc = 0; cc < game.cols; cc++) {
+                            if (game.board[rr][cc] !== ' ') {
+                                game.board[rr][cc] = colors[idx++];
+                                game.types[rr][cc] = 0;
+                            }
+                        }
+                    }
+            } else {
+                game.pop(r, c);
+            }
+        }
+    } else if (activeAbility === 'row') {
+        if(game.abilitiesCols[1] > 0) {
+            game.abilitiesCols[1]--;
+            for (let cc = 0; cc < game.cols; cc++) {
+                game.pop(r, cc);
+            }
+        }
+    } else if (activeAbility === 'col') {
+        if(game.abilitiesCols[2] > 0) {
+            game.abilitiesCols[2]--;
+            for (let rr = 0; rr < game.rows; rr++) {
+                game.pop(rr, c);
+            }
+        }
+    } else if (activeAbility === 'cross') {
+        if(game.abilitiesCols[3] > 0) {
+            game.abilitiesCols[3]--;
+            for (let cc = 0; cc < game.cols; cc++) {
+                game.pop(r, cc);
+            }
+            for (let rr = 0; rr < game.rows; rr++) {
+                game.pop(rr, c);
+            }
+        }
+    } else if (activeAbility === 'special') {
+        if(game.abilitiesCols[4] > 0) {
+            game.abilitiesCols[4]--;
+            for (let rr = 0; rr < game.rows; rr++) {
+                for (let cc = 0; cc < game.cols; cc++) {
+                    if(rr == r && cc == c) {
+                        continue;
+                    }
+                    if(game.board[r][c] == game.board[rr][cc]) {
+                        game.pop(rr, cc);
+                    }
+                }
+            }
+            game.pop(r, c);
+        }
+    }
+
+    activeAbility = null;
+    updateAbilityButtons();
+    
+    // Запускаем каскад с анимациями
+    processMatches();
+}
+
 function onCellClick(e) {
     if (game.isLosed() || isAnimating) return;
     
     const row = parseInt(e.target.dataset.row);
     const col = parseInt(e.target.dataset.col);
     
+    // Если активна способность
+    if (activeAbility) {
+        useAbility(row, col);
+        return;
+    }
+
     if (selectedCell === null) {
         selectedCell = { row, col };
         e.target.classList.add('selected');
@@ -172,6 +295,41 @@ async function processMatches() {
     isAnimating = true;
 
     while (true) {
+        // Проверяем, есть ли пустые клетки
+        let hasEmpty = false;
+        for (let r = 0; r < game.rows; r++) {
+            for (let c = 0; c < game.cols; c++) {
+                if (game.board[r][c] === ' ') {
+                    hasEmpty = true;
+                    break;
+                }
+            }
+            if (hasEmpty) break;
+        }
+        
+        // Если есть пустые — не ищем матчи, сначала гравитация и fill
+        if (hasEmpty) {
+            const moves = game.gravitateAnimated();
+            
+            if (moves.length > 0) {
+                await animateGravity(moves);
+            }
+            
+            game.gravitate();
+            renderBoard();
+            await sleep(80);
+            
+            const newCells = game.fillAnimated();
+            
+            if (newCells.length > 0) {
+                renderBoard();
+                await animateNewCells(newCells);
+            }
+            
+            await sleep(150);
+            continue;
+        }
+
         // 1. Проверяем и удаляем совпадения
         const hasMatches = game.checkMatches();
         if (!hasMatches) break;
@@ -265,19 +423,50 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-    const resetBtn = document.getElementById('reset');
+function updateAbilityButtons() {
+    document.querySelectorAll('.ability-btn').forEach(btn => btn.classList.remove('active'));
     
-    resetBtn.addEventListener('click', () => {
-        if (isAnimating) return;
-        game = new Match3Game(6, 6, ['₽', 'Б', '¥', '$', '€'], 20);
-        renderBoard();
-        selectedCell = null;
-        isAnimating = false;
-    });
+    // Обновляем цифры только если есть abilitiesCols
+    if (game.abilitiesCols) {
+        document.querySelector('#ability-block .ability-count').textContent = game.abilitiesCols[0];
+        document.querySelector('#ability-row .ability-count').textContent = game.abilitiesCols[1];
+        document.querySelector('#ability-col .ability-count').textContent = game.abilitiesCols[2];
+        document.querySelector('#ability-cross .ability-count').textContent = game.abilitiesCols[3];
+        document.querySelector('#ability-special .ability-count').textContent = game.abilitiesCols[4];
+    }
+    
+    if (activeAbility === 'block') document.getElementById('ability-block').classList.add('active');
+    if (activeAbility === 'row') document.getElementById('ability-row').classList.add('active');
+    if (activeAbility === 'col') document.getElementById('ability-col').classList.add('active');
+    if (activeAbility === 'cross') document.getElementById('ability-cross').classList.add('active');
+    if (activeAbility === 'special') document.getElementById('ability-special').classList.add('active');
+}
+
+window.addEventListener('DOMContentLoaded', () => {
     
     renderBoard();
-    window.parent.postMessage({ type: 'GAME_READY' }, '*');
+    
+    document.getElementById('ability-block').addEventListener('click', () => {
+        activeAbility = activeAbility === 'block' ? null : 'block';
+        updateAbilityButtons();
+    });
+    document.getElementById('ability-row').addEventListener('click', () => {
+        activeAbility = activeAbility === 'row' ? null : 'row';
+        updateAbilityButtons();
+    });
+    document.getElementById('ability-col').addEventListener('click', () => {
+        activeAbility = activeAbility === 'col' ? null : 'col';
+        updateAbilityButtons();
+    });
+    document.getElementById('ability-cross').addEventListener('click', () => {
+        activeAbility = activeAbility === 'cross' ? null : 'cross';
+        updateAbilityButtons();
+    });
+    document.getElementById('ability-special').addEventListener('click', () => {
+        activeAbility = activeAbility === 'special' ? null : 'special';
+        updateAbilityButtons();
+    });
+    // window.parent.postMessage({ type: 'GAME_READY' }, '*');
 });
 
 // Переопределяем конец игры

@@ -11,9 +11,32 @@
         <div class="header">
             <div>Счёт: <span id="score">0</span></div>
             <div>Ходы: <span id="moves">0/20</span></div>
-            <button id="reset">Новая игра</button>
+            <!-- <button id="reset">Новая игра</button> -->
         </div>
         <div id="board" class="board"></div>
+        <!-- Кнопки способностей -->
+        <div class="abilities">
+            <button id="ability-block" class="ability-btn">
+                <span class="ability-icon">💥</span>
+                <span class="ability-count">3</span>
+            </button>
+            <button id="ability-row" class="ability-btn">
+                <span class="ability-icon">↔</span>
+                <span class="ability-count">3</span>
+            </button>
+            <button id="ability-col" class="ability-btn">
+                <span class="ability-icon">↕</span>
+                <span class="ability-count">3</span>
+            </button>
+            <button id="ability-cross" class="ability-btn">
+                <span class="ability-icon">✚</span>
+                <span class="ability-count">3</span>
+            </button>
+            <button id="ability-special" class="ability-btn">
+                <span class="ability-icon">⭐</span>
+                <span class="ability-count">3</span>
+            </button>
+        </div>
         <div id="message" class="hint">Кликни на две соседние клетки чтобы поменять</div>
     </div>
     <script type="module" src="main.js"></script>

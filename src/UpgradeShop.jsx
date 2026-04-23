@@ -43,35 +43,35 @@ const mascotInfo = {
     name: 'Лев', 
     color: '#ffa502', 
     ability: '🦁 Рык', 
-    abilityDesc: 'Уничтожает все камни одного цвета',
+    abilityDesc: 'Заменяет все камни одного цвета на другой',
     usesText: (lvl) => `${lvl} раз(а) за игру`
   },
   eagle: { 
     name: 'Орёл', 
     color: '#4ecdc4', 
-    ability: '🦅 Полёт', 
-    abilityDesc: 'Меняет местами любые 2 камня',
+    ability: '🦅 Зрение', 
+    abilityDesc: 'Превращает все камни одного цвета в бомбы',
     usesText: (lvl) => `${lvl} раз(а) за игру`
   },
   bear: { 
     name: 'Медведь', 
     color: '#8B4513', 
     ability: '🐻 Мощь', 
-    abilityDesc: 'Уничтожает ряд и столбец',
+    abilityDesc: 'Уничтожает ВСЕ камни на доске',
     usesText: (lvl) => `${lvl} раз(а) за игру`
   },
   stork: { 
     name: 'Аист', 
     color: '#ff6b6b', 
     ability: '🐦 Доставка', 
-    abilityDesc: 'Добавляет 3 хода',
+    abilityDesc: 'Перемешивает все камни на доске',
     usesText: (lvl) => `${lvl} раз(а) за игру`
   },
   cat: { 
     name: 'Кот', 
     color: '#9b59b6', 
     ability: '😺 Ловкость', 
-    abilityDesc: 'Перемешивает доску',
+    abilityDesc: 'Добавляет 10 ходов и ничтожает выбранный камень',
     usesText: (lvl) => `${lvl} раз(а) за игру`
   },
 }
@@ -87,6 +87,7 @@ function UpgradeShop({ loyaltyPoints, userMascots, activeMascotId, onUpgrade, on
       
       <div className="upgrades-list">
         {userMascots.map(mascot => {
+          console.log('mascot:', mascot.mascot_id, 'info:', mascotInfo[mascot.mascot_id])
           const info = mascotInfo[mascot.mascot_id]
           const cost = mascot.level * 100 + 50
           const canAfford = loyaltyPoints >= cost
