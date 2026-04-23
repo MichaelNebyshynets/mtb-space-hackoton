@@ -46,6 +46,9 @@ function App() {
   const [mode, setMode] = useState('bank')
 
 
+
+
+
   const startGame = () => {
     if (battery <= 0) {
       alert('Недостаточно батареек! Совершите транзакцию.')
@@ -285,7 +288,23 @@ useEffect(() => {
     setBattery(userData.battery || 5)
     setMaxBattery(userData.max_battery || 5)
     setLoyaltyPoints(userData.loyalty_points || 420)
-    
+
+
+    const { data: transactions, error: txError } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(20)
+
+    if (txError) {
+      console.error('❌ Ошибка загрузки транзакций:', txError)
+    } else {
+      console.log('📦 Транзакции из базы:', transactions)
+    }
+
+    setBankTransactions(transactions || [])
+        
     // 2. Загружаем маскотов
     let { data: mascots } = await supabase
       .from('user_mascots')
@@ -529,35 +548,81 @@ useEffect(() => {
 
 // Удали handlePurchase и модалку покупки, добавь эти три функции:
 
-  const handleTransfer = async () => {
-    const amount = prompt('Введите сумму перевода (BYN):')
-    if (!amount || amount <= 0) return
-    
-    const numAmount = Number(amount)
-    const earnedBattery = calculateBattery(numAmount)
-    const earnedLoyalty = Math.floor(numAmount * 2)
-    
-    const newBattery = battery + earnedBattery
-    const newLoyalty = loyaltyPoints + earnedLoyalty
-    const newBalance = balance - numAmount
-    
-    if (dbUser && dbUser.id !== 'local') {
-      await supabase
-        .from('users')
-        .update({ 
-          battery: newBattery,
-          loyalty_points: newLoyalty,
-          balance: newBalance
-        })
-        .eq('id', dbUser.id)
-    }
-    
-    setBattery(newBattery)
-    setLoyaltyPoints(newLoyalty)
-    setBalance(newBalance)  // списываем с реального счёта
-    
-    alert(`✅ Перевод на ${amount} BYN выполнен!\n+${earnedBattery}🔋 +${earnedLoyalty}⭐`)
+const handleTransfer = async () => {
+  const amount = prompt('Введите сумму перевода (BYN):')
+  if (!amount || amount <= 0) return
+  
+  const numAmount = Number(amount)
+  const earnedBattery = calculateBattery(numAmount)
+  const earnedLoyalty = Math.floor(numAmount * 2)
+  
+  const newBattery = battery + earnedBattery
+  const newLoyalty = loyaltyPoints + earnedLoyalty
+  const newBalance = balance - numAmount
+  
+  const newTransaction = {
+    id: Date.now().toString(),
+    title: `Перевод`,
+    amount: numAmount,
+    created_at: new Date().toISOString()
   }
+  
+  console.log('🆕 newTransaction:', newTransaction)
+  
+  setBankTransactions(prev => {
+    console.log('📋 prev bankTransactions:', prev)
+    const updated = [newTransaction, ...prev].slice(0, 20)
+    console.log('✅ updated bankTransactions:', updated)
+    return updated
+  })
+
+  if (dbUser && dbUser.id !== 'local') {
+    console.log('💾 Сохраняем в Supabase, userId:', dbUser.id)
+    
+    // Обновляем users
+    const { error: userError } = await supabase
+      .from('users')
+      .update({ 
+        battery: newBattery,
+        loyalty_points: newLoyalty,
+        balance: newBalance
+      })
+      .eq('id', dbUser.id)
+    
+    if (userError) {
+      console.error('❌ Ошибка обновления users:', userError)
+    } else {
+      console.log('✅ users обновлены')
+    }
+
+    // Сохраняем транзакцию
+    const { error: txError } = await supabase
+      .from('transactions')
+      .insert({
+        user_id: dbUser.id,
+        title: 'Перевод',
+        amount: numAmount,
+        category: 'transfer',
+        earned: earnedLoyalty,
+        used: true
+      })
+    
+    if (txError) {
+      console.error('❌ Ошибка вставки транзакции:', txError)
+      alert('Ошибка сохранения транзакции в базу: ' + txError.message)
+    } else {
+      console.log('✅ Транзакция сохранена в Supabase')
+    }
+  } else {
+    console.log('⚠️ Локальный режим, в базу не сохраняем')
+  }
+  
+  setBattery(newBattery)
+  setLoyaltyPoints(newLoyalty)
+  setBalance(newBalance)
+  
+  alert(`✅ Перевод на ${amount} BYN выполнен!\n+${earnedBattery}🔋 +${earnedLoyalty}⭐`)
+}
 
   const handleErip = async () => {
     const amount = prompt('Введите сумму оплаты ЕРИП (BYN):')
@@ -570,6 +635,14 @@ useEffect(() => {
     const newBattery = battery + earnedBattery
     const newLoyalty = loyaltyPoints + earnedLoyalty
     const newBalance= balance - numAmount
+
+    const newTransaction = {
+      id: Date.now().toString(),
+      title: `ЕРИП`,
+      amount: numAmount,
+      created_at: new Date().toISOString()
+    }
+    setBankTransactions(prev => [newTransaction, ...prev].slice(0, 20))
     
     if (dbUser && dbUser.id !== 'local') {
       await supabase
@@ -580,6 +653,16 @@ useEffect(() => {
           balance: newBalance
         })
         .eq('id', dbUser.id)
+
+
+      await supabase.from('transactions').insert({
+        user_id: dbUser.id,
+        title: 'ЕРИП',
+        amount: numAmount,
+        category: 'erip',
+        earned: earnedLoyalty,
+        used: true
+      })
     }
     
     setBattery(newBattery)
@@ -600,6 +683,14 @@ useEffect(() => {
     const newBattery = battery + earnedBattery
     const newLoyalty = loyaltyPoints + earnedLoyalty
     const newBalance = balance - numAmount
+
+    const newTransaction = {
+      id: Date.now().toString(),
+      title: `Вклад`,
+      amount: numAmount,
+      created_at: new Date().toISOString()
+    }
+    setBankTransactions(prev => [newTransaction, ...prev].slice(0, 20))
     
     if (dbUser && dbUser.id !== 'local') {
       await supabase
@@ -610,6 +701,17 @@ useEffect(() => {
           balance: newBalance
         })
         .eq('id', dbUser.id)
+
+
+
+      await supabase.from('transactions').insert({
+        user_id: dbUser.id,
+        title: 'Вклад',
+        amount: numAmount,
+        category: 'deposit',
+        earned: earnedLoyalty,
+        used: true
+      })
     }
     
     setBattery(newBattery)
@@ -719,38 +821,55 @@ useEffect(() => {
   console.log('userMascots:', userMascots)
 
 
-  const BankScreen = () => (
-    <>
-      {/* Изображение карты */}
-      <div className="card-preview">
-        <img 
-          src="/assets/card.png"  // или твой путь к картинке
-          alt="MTB Card"
-          className="card-image"
-        />
-        <div className="card-balance">{balance.toFixed(2)} BYN</div>
-      </div>
+  const BankScreen = () => {
+    console.log('🏦 BankScreen render, bankTransactions:', bankTransactions)
+    
+    return (
+      <>
+        <div className="card-preview">
+          <img 
+            src="/assets/card.png"
+            alt="MTB Card"
+            className="card-image"
+          />
+          <div className="card-balance">{balance.toFixed(2)} BYN</div>
+        </div>
 
-      <div className="loyalty-section">
-        <span className="loyalty-icon">⭐</span>
-        <span className="loyalty-value">{loyaltyPoints}</span>
-        <span className="loyalty-label">баллов</span>
-      </div>
+        <div className="loyalty-section">
+          <span className="loyalty-icon">⭐</span>
+          <span className="loyalty-value">{loyaltyPoints}</span>
+          <span className="loyalty-label">баллов</span>
+        </div>
 
-      {/* Кнопки транзакций */}
-      <div className="bank-actions">
-        <button className="bank-action-btn transfer" onClick={handleTransfer}>
-          💸 Перевести
-        </button>
-        <button className="bank-action-btn erip" onClick={handleErip}>
-          📱 Оплатить
-        </button>
-        <button className="bank-action-btn save" onClick={handleSave}>
-          🏦 Вклад
-        </button>
-      </div>
-    </>
-  )
+        <div className="bank-actions">
+          <button className="bank-action-btn transfer" onClick={handleTransfer}>
+            💸 Перевести
+          </button>
+          <button className="bank-action-btn erip" onClick={handleErip}>
+            📱 Оплатить
+          </button>
+          <button className="bank-action-btn save" onClick={handleSave}>
+            🏦 Вклад
+          </button>
+        </div>
+
+        <div className="transaction-history">
+          <h4>📋 Последние операции</h4>
+          {bankTransactions.length === 0 ? (
+            <p className="empty-history">Нет операций</p>
+          ) : (
+            bankTransactions.slice(0, 5).map(tx => (
+              <div key={tx.id} className="history-item">
+                <span className="history-title">{tx.title}</span>
+                <span className="history-amount">-{tx.amount} BYN</span>
+                <span className="history-date">{new Date(tx.created_at).toLocaleDateString()}</span>
+              </div>
+            ))
+          )}
+        </div>
+      </>
+    )
+  }
 
 
   const GameModeScreen = () => (
@@ -817,6 +936,22 @@ useEffect(() => {
               <button className="bank-action-btn save" onClick={handleSave}>
                 🏦 Вклад
               </button>
+            </div>
+
+
+            <div className="transaction-history">
+              <h4>📋 Последние операции</h4>
+              {bankTransactions.length === 0 ? (
+                <p className="empty-history">Нет операций</p>
+              ) : (
+                bankTransactions.slice(0, 5).map(tx => (
+                  <div key={tx.id} className="history-item">
+                    <span className="history-title">{tx.title}</span>
+                    <span className="history-amount">-{tx.amount} BYN</span>
+                    <span className="history-date">{new Date(tx.created_at).toLocaleDateString()}</span>
+                  </div>
+                ))
+              )}
             </div>
           </>
         ) : (
