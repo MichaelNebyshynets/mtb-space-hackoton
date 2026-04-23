@@ -1044,7 +1044,7 @@ const handleTransfer = async () => {
               maxBattery={maxBattery}
             />
 
-            <BalanceCard balance={balance} />
+            {/* <BalanceCard balance={balance} /> */}
             
             <div className="loyalty-section">
               <span className="loyalty-icon">⭐</span>
