@@ -102,3 +102,28 @@
   margin-top: 20px;
   opacity: 0.8;
 }
+
+.auth-card input[type="text"] {
+  width: 100%;
+  padding: 14px 16px;
+  background: #0f0f1a;
+  border: 2px solid #2a2a4a;
+  border-radius: 16px;
+  color: white;
+  font-size: 16px;
+  margin-bottom: 12px;
+  outline: none;
+  box-sizing: border-box;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-align: center;
+}
+
+.auth-card input[type="text"]:focus {
+  border-color: #FF6B00;
+}
+
+.auth-card input[type="text"]::placeholder {
+  letter-spacing: 1px;
+  text-transform: none;
+}

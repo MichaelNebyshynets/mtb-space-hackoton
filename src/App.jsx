@@ -9,6 +9,8 @@ import MascotSwitcher from './MascotSwitcher'
 import BalanceCard from './BalanceCard'
 import GameScreen from './GameScreen'
 import Leaderboard from './Leaderboard'
+import BonusShop from './BonusShop'
+import Referral from './Referral'
 import { supabase } from './supabase'
 
 function App() {
@@ -47,6 +49,72 @@ function App() {
 
   const [showUpgradeStore, setShowUpgradeStore] = useState(false)
 
+  const [showBonusShop, setShowBonusShop] = useState(false)
+  const [showReferral, setShowReferral] = useState(false)
+
+
+  const handleUseBonus = async (purchasedBonus) => {
+    // Помечаем как использованный в Supabase
+    if (dbUser && dbUser.id !== 'local') {
+      const { error } = await supabase
+        .from('user_bonuses')
+        .update({ used: true })
+        .eq('id', purchasedBonus.id)
+      
+      if (error) {
+        console.error('Ошибка использования бонуса:', error)
+        return
+      }
+    }
+    
+    const bonus = bonuses.find(b => b.id === purchasedBonus.bonus_id)
+    alert(`🎉 Вы использовали: ${bonus?.name || 'бонус'}!\n${bonus?.description}`)
+    setShowBonusShop(false)
+  }
+
+  // Массив bonuses нужно вынести на уровень App или импортировать
+  const bonuses = [
+    { id: 'coffee', name: 'Бесплатный кофе', icon: '☕', cost: 500, description: 'Промокод в партнёрскую кофейню' },
+    { id: 'cashback', name: 'Кэшбек 5%', icon: '💸', cost: 1000, description: 'Повышенный кэшбек на неделю' },
+    { id: 'cinema', name: 'Билет в кино', icon: '🎬', cost: 1500, description: 'Скидка 50% на билет' },
+    { id: 'taxi', name: 'Поездка на такси', icon: '🚖', cost: 2000, description: 'Промокод на 15 BYN' },
+    { id: 'oz', name: 'Сертификат OZ', icon: '🛍️', cost: 5000, description: '50 BYN на покупки' },
+  ]
+
+  const handleBuyBonus = async (bonus) => {
+    if (loyaltyPoints < bonus.cost) {
+      alert('Недостаточно баллов')
+      return
+    }
+    
+    const newLoyalty = loyaltyPoints - bonus.cost
+    
+    // Сохраняем в Supabase
+    if (dbUser && dbUser.id !== 'local') {
+      const { error } = await supabase
+        .from('user_bonuses')
+        .insert({
+          user_id: dbUser.id,
+          bonus_id: bonus.id
+        })
+      
+      if (error) {
+        if (error.code === '23505') {
+          alert('Вы уже купили этот бонус!')
+          return
+        }
+        console.error('Ошибка покупки бонуса:', error)
+      }
+      
+      await supabase
+        .from('users')
+        .update({ loyalty_points: newLoyalty })
+        .eq('id', dbUser.id)
+    }
+    
+    setLoyaltyPoints(newLoyalty)
+    alert(`✅ Вы приобрели: ${bonus.name}!\n${bonus.description}`)
+  }
 
 
 
@@ -927,6 +995,15 @@ const handleTransfer = async () => {
               <span className="loyalty-label">баллов</span>
             </div>
 
+
+            <button className="bonus-nav-button" onClick={() => setShowBonusShop(true)}>
+              🎁 Магазин бонусов
+            </button>
+
+            <button className="referral-nav-button" onClick={() => setShowReferral(true)}>
+              👥 Пригласить друга
+            </button>
+
             <div className="bank-actions">
               <button className="bank-action-btn transfer" onClick={handleTransfer}>
                 💸 Перевести
@@ -1122,6 +1199,34 @@ const handleTransfer = async () => {
               activeMascotId={activeMascot?.mascot_id}
               onUpgrade={handleUpgrade}
               onBack={() => setShowUpgradeStore(false)}
+            />
+          </div>
+        </div>
+      )}
+
+
+      {showBonusShop && (
+        <div className="modal-overlay" onClick={() => setShowBonusShop(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <BonusShop 
+                loyaltyPoints={loyaltyPoints}
+                dbUserId={dbUser?.id}
+                onBuy={handleBuyBonus}
+                onUseBonus={handleUseBonus}
+                onClose={() => setShowBonusShop(false)}
+
+            />
+          </div>
+        </div>
+      )}
+
+
+      {showReferral && (
+        <div className="modal-overlay" onClick={() => setShowReferral(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <Referral 
+              dbUserId={dbUser?.id}
+              onClose={() => setShowReferral(false)}
             />
           </div>
         </div>

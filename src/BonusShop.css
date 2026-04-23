@@ -1,0 +1,152 @@
+.bonus-shop {
+  width: 100%;
+}
+
+.bonus-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.bonus-tab {
+  flex: 1;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: none;
+  border-radius: 12px;
+  color: #B0C4DE;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bonus-tab.active {
+  background: #FF6B00;
+  color: white;
+}
+
+.bonus-list, .my-bonuses {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bonus-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  transition: all 0.2s;
+}
+
+.bonus-card.purchased {
+  opacity: 0.6;
+}
+
+.bonus-icon {
+  font-size: 32px;
+  min-width: 40px;
+  text-align: center;
+}
+
+.bonus-info {
+  flex: 1;
+}
+
+.bonus-name {
+  color: white;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.bonus-desc {
+  color: #B0C4DE;
+  font-size: 12px;
+  margin: 2px 0;
+}
+
+.bonus-cost {
+  color: #FF6B00;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.bonus-btn {
+  background: #FF6B00;
+  border: none;
+  color: white;
+  font-weight: bold;
+  padding: 8px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.bonus-btn.cannot-afford {
+  background: #3a3a5a;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.purchased-badge {
+  color: #2ecc71;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.my-bonus-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+}
+
+.my-bonus-card.used {
+  opacity: 0.5;
+}
+
+.bonus-date {
+  color: #6B8CAE;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.bonus-status {
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.bonus-status.active {
+  color: #2ecc71;
+}
+
+.bonus-status.used {
+  color: #6B8CAE;
+}
+
+.empty-bonuses {
+  color: #6B8CAE;
+  text-align: center;
+  padding: 20px;
+}
+
+.bonus-use-btn {
+  background: #2ecc71;
+  border: none;
+  color: white;
+  font-weight: bold;
+  padding: 8px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.bonus-use-btn:hover {
+  background: #27ae60;
+  transform: scale(1.02);
+}

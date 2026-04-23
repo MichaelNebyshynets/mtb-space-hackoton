@@ -553,3 +553,43 @@
   font-size: 11px;
   padding: 8px;
 }
+
+.bonus-nav-button {
+  width: 100%;
+  max-width: 380px;
+  padding: 14px;
+  background: linear-gradient(135deg, #FF6B00, #FFA502);
+  border: none;
+  border-radius: 16px;
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  margin: 8px 0;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
+}
+
+.bonus-nav-button:active {
+  transform: scale(0.97);
+}
+
+.referral-nav-button {
+  width: 100%;
+  max-width: 380px;
+  padding: 14px;
+  background: linear-gradient(135deg, #1E88E5, #1565C0);
+  border: none;
+  border-radius: 16px;
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  margin: 8px 0;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(30, 136, 229, 0.3);
+}
+
+.referral-nav-button:active {
+  transform: scale(0.97);
+}

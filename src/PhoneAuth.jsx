@@ -1,17 +1,16 @@
 import { useState } from 'react'
 import { supabase } from './supabase'
-import MascotPicker from './MascotPicker'
 import './PhoneAuth.css'
 
 function PhoneAuth({ onLogin }) {
   const [step, setStep] = useState('phone')
   const [phone, setPhone] = useState('')
   const [code, setCode] = useState('')
+  const [username, setUsername] = useState('')
+  const [referralInput, setReferralInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  // const [selectedMascot, setSelectedMascot] = useState('lion')
   const [tempUser, setTempUser] = useState(null)
-  const [username, setUsername] = useState('')
 
   const formatPhone = (value) => {
     let cleaned = value.replace(/[^\d+]/g, '')
@@ -19,7 +18,6 @@ function PhoneAuth({ onLogin }) {
     return cleaned
   }
 
-  // Отправка кода (заглушка)
   const handleSendCode = async (e) => {
     e.preventDefault()
     const formattedPhone = formatPhone(phone)
@@ -31,7 +29,6 @@ function PhoneAuth({ onLogin }) {
     setStep('code')
   }
 
-  // Проверка кода
   const handleVerifyCode = async (e) => {
     e.preventDefault()
     if (code !== '123456') {
@@ -55,7 +52,6 @@ function PhoneAuth({ onLogin }) {
       phone: formattedPhone
     }
 
-    // Проверяем, есть ли уже такой пользователь
     const { data: existingUser } = await supabase
       .from('users')
       .select('*')
@@ -63,16 +59,13 @@ function PhoneAuth({ onLogin }) {
       .maybeSingle()
 
     if (existingUser) {
-      // Уже зарегистрирован — сразу входим
       onLogin(fakeUser)
     } else {
-      // Новый — идём на ввод имени
       setTempUser(fakeUser)
       setStep('name')
     }
   }
 
-  // Завершить регистрацию
   const handleComplete = async () => {
     if (!username.trim()) {
       setError('Введи имя')
@@ -85,24 +78,56 @@ function PhoneAuth({ onLogin }) {
     try {
       const formattedPhone = formatPhone(phone)
       
-      // Создаём пользователя с НОВЫМИ полями
-      const { data: newUser, error: userError } = await supabase
-        .from('users')
-        .insert({
-          id: tempUser.id,
-          phone: formattedPhone,
-          username: username,  // ← имя
-          mascot: 'lion',
-          balance: 1247.50,      // ← вместо fuel
-          battery: 5,            // ← вместо hunger
-          max_battery: 5,
-          loyalty_points: 420,   // ← вместо activity
-          last_seen: new Date()
-        })
-        .select()
-        .single()
+      // Генерируем реферальный код
+      const generateReferralCode = () => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+        let code = 'MTB-'
+        for (let i = 0; i < 6; i++) {
+          code += chars.charAt(Math.floor(Math.random() * chars.length))
+        }
+        return code
+      }
 
-      if (userError) throw userError
+      const referralCode = generateReferralCode()
+      let referredBy = null
+      let bonusPoints = 420
+      
+      // Проверяем реферальный код
+      if (referralInput.trim()) {
+        const { data: referrer } = await supabase
+          .from('users')
+          .select('id, loyalty_points')
+          .eq('referral_code', referralInput.trim().toUpperCase())
+          .maybeSingle()
+        
+        if (referrer) {
+          referredBy = referrer.id
+          bonusPoints = 920 // +500 бонусных баллов
+          
+          // Начисляем бонус рефереру
+          await supabase
+            .from('users')
+            .update({ 
+              loyalty_points: referrer.loyalty_points + 500
+            })
+            .eq('id', referrer.id)
+        }
+      }
+      
+      // Создаём пользователя
+      await supabase.from('users').insert({
+        id: tempUser.id,
+        phone: formattedPhone,
+        username: username,
+        mascot: 'lion',
+        referral_code: referralCode,
+        referred_by: referredBy,
+        balance: 1247.50,
+        battery: 5,
+        max_battery: 5,
+        loyalty_points: bonusPoints,
+        last_seen: new Date()
+      })
 
       // Создаём всех 5 маскотов
       const mascots = ['lion', 'eagle', 'bear', 'stork', 'cat']
@@ -112,9 +137,8 @@ function PhoneAuth({ onLogin }) {
           mascot_id: mascotId,
           level: 1,
           experience: 0,
-          high_score: 0,         // ← добавили рекорд
-          is_active: mascotId === 'lion',
-          unlocked_abilities: []
+          high_score: 0,
+          is_active: mascotId === 'lion'
         })
       }
 
@@ -132,11 +156,13 @@ function PhoneAuth({ onLogin }) {
       setCode('')
     } else if (step === 'name') {
       setStep('code')
+    } else if (step === 'referral') {
+      setStep('name')
     }
     setError('')
   }
 
-
+  // Экран ввода имени
   if (step === 'name') {
     return (
       <div className="auth-container">
@@ -151,8 +177,8 @@ function PhoneAuth({ onLogin }) {
             autoFocus
           />
           {error && <p className="auth-error">{error}</p>}
-          <button className="auth-btn" onClick={handleComplete} disabled={loading}>
-            {loading ? 'Создание...' : 'Начать игру'}
+          <button className="auth-btn" onClick={() => setStep('referral')}>
+            Далее
           </button>
           <button className="auth-back" onClick={handleBack}>← Назад</button>
         </div>
@@ -160,22 +186,30 @@ function PhoneAuth({ onLogin }) {
     )
   }
 
-  // Экран выбора маскота
-  // if (step === 'mascot') {
-  //   return (
-  //     <div className="auth-container">
-  //       <div className="auth-card auth-card-wide">
-  //         <h2>🚀 MTB Space Station</h2>
-  //         <MascotPicker selected={selectedMascot} onSelect={setSelectedMascot} />
-  //         {error && <p className="auth-error">{error}</p>}
-  //         <button className="auth-btn" onClick={handleComplete} disabled={loading}>
-  //           {loading ? 'Создание...' : 'Начать игру'}
-  //         </button>
-  //         <button className="auth-back" onClick={handleBack}>← Назад</button>
-  //       </div>
-  //     </div>
-  //   )
-  // }
+  // Экран ввода реферального кода
+  if (step === 'referral') {
+    return (
+      <div className="auth-container">
+        <div className="auth-card">
+          <h2>🚀 MTB Space Station</h2>
+          <h3>Есть реферальный код?</h3>
+          <input
+            type="text"
+            placeholder="MTB-XXXXXX (необязательно)"
+            value={referralInput}
+            onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
+            autoFocus
+          />
+          <p className="auth-hint">Если друг дал код — введи его и получи +500 ⭐</p>
+          {error && <p className="auth-error">{error}</p>}
+          <button className="auth-btn" onClick={handleComplete} disabled={loading}>
+            {loading ? 'Создание...' : 'Завершить'}
+          </button>
+          <button className="auth-back" onClick={handleBack}>← Назад</button>
+        </div>
+      </div>
+    )
+  }
 
   // Экран ввода телефона / кода
   return (
