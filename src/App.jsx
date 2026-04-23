@@ -8,6 +8,7 @@ import PhoneAuth from './PhoneAuth'
 import MascotSwitcher from './MascotSwitcher'
 import BalanceCard from './BalanceCard'
 import GameScreen from './GameScreen'
+import Leaderboard from './Leaderboard'
 import { supabase } from './supabase'
 
 function App() {
@@ -39,6 +40,10 @@ function App() {
 
   const [userMascots, setUserMascots] = useState([])
   const [activeMascot, setActiveMascot] = useState(null)
+
+  const [showLeaderboard, setShowLeaderboard] = useState(false)
+
+  const [mode, setMode] = useState('bank')
 
 
   const startGame = () => {
@@ -73,6 +78,21 @@ function App() {
     setLoyaltyPoints(newLoyalty)
     setShowGame(false)
     
+    if (score > (activeMascot?.high_score || 0)) {
+      await supabase
+        .from('user_mascots')
+        .update({ high_score: score })
+        .eq('user_id', dbUser.id)
+        .eq('mascot_id', activeMascot.mascot_id)
+      
+      setActiveMascot(prev => ({ ...prev, high_score: score }))
+      setUserMascots(prev => prev.map(m => 
+        m.mascot_id === activeMascot.mascot_id 
+          ? { ...m, high_score: score } 
+          : m
+      ))
+    }
+
     alert(`🎮 Игра окончена! Счёт: ${score}\n-1 🔋\n+${earnedLoyalty} ⭐ баллов лояльности`)
   }
 
@@ -501,7 +521,7 @@ useEffect(() => {
   //   initApp()
   // }, [])
 
-  const userName = telegramUser?.first_name || 'Гость'
+  const userName = dbUser?.username || dbUser?.phone || 'Гость' 
   const currentLevel = Math.floor(fuel / 500) + 1
   const currentLevelFuel = fuel % 500
   const progressPercent = (currentLevelFuel / 500) * 100
@@ -698,49 +718,95 @@ useEffect(() => {
   console.log('App render:', { session, loading })
   console.log('userMascots:', userMascots)
 
+
+  const BankScreen = () => (
+    <>
+      {/* Изображение карты */}
+      <div className="card-preview">
+        <img 
+          src="/assets/card.png"  // или твой путь к картинке
+          alt="MTB Card"
+          className="card-image"
+        />
+        <div className="card-balance">{balance.toFixed(2)} BYN</div>
+      </div>
+
+      <div className="loyalty-section">
+        <span className="loyalty-icon">⭐</span>
+        <span className="loyalty-value">{loyaltyPoints}</span>
+        <span className="loyalty-label">баллов</span>
+      </div>
+
+      {/* Кнопки транзакций */}
+      <div className="bank-actions">
+        <button className="bank-action-btn transfer" onClick={handleTransfer}>
+          💸 Перевести
+        </button>
+        <button className="bank-action-btn erip" onClick={handleErip}>
+          📱 Оплатить
+        </button>
+        <button className="bank-action-btn save" onClick={handleSave}>
+          🏦 Вклад
+        </button>
+      </div>
+    </>
+  )
+
+
+  const GameModeScreen = () => (
+    <>
+      <Character 
+        level={currentLevel}
+        upgrades={upgrades}
+        mascot={activeMascot?.mascot_id || 'lion'}
+        mascotLevel={activeMascot?.level || 1}
+        onAvatarClick={() => setShowMascotSwitcher(true)}
+        battery={battery}
+        maxBattery={maxBattery}
+      />
+
+      <button className="game-nav-button" onClick={startGame}>
+        🎮 Играть (1 🔋)
+      </button>
+
+      <button className="shop-nav-button" onClick={() => setCurrentScreen('shop')}>
+        🏪 Магазин прокачек
+      </button>
+
+      <button className="leaderboard-btn" onClick={() => setShowLeaderboard(true)}>
+        🏆 Лидеры
+      </button>
+    </>
+  )
+
   return (
     <div className="app">
       <header className="app-header">
-        <h1>🚀 MTB Space Station</h1>
+        <h1>🚀 MTB Space</h1>
         <p className="user-greeting">
           Привет, {userName}!
-          <button onClick={handleLogout} style={{ marginLeft: 10, background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer' }}>Выйти</button>
         </p>
       </header>
       
       <main className="app-main">
-        {currentScreen === 'home' ? (
+        {mode === 'bank' ? (
           <>
-            <Character 
-              level={currentLevel}
-              upgrades={upgrades}
-              mascot={activeMascot?.mascot_id || 'lion'}
-              mascotLevel={activeMascot?.level || 1}
-              onAvatarClick={() => setShowMascotSwitcher(true)}
-              battery={battery}
-              maxBattery={maxBattery}
-            />
-            
+            {/* Bank Mode */}
+            <div className="card-preview">
+              <img 
+                src="/assets/card.png"
+                alt="MTB Card"
+                className="card-image"
+              />
+              <div className="card-balance">{balance.toFixed(2)} BYN</div>
+            </div>
 
-
-            <BalanceCard balance={balance}/>
             <div className="loyalty-section">
               <span className="loyalty-icon">⭐</span>
               <span className="loyalty-value">{loyaltyPoints}</span>
               <span className="loyalty-label">баллов</span>
             </div>
-                        
-            <div className="level-section">
-              <div className="level-header">
-                <span className="level-badge">⭐ Уровень станции {currentLevel}</span>
-                <span className="level-progress-text">{currentLevelFuel} / 500 🚀</span>
-              </div>
-              <div className="progress-bar">
-                <div className="progress-fill" style={{ width: `${progressPercent}%` }} />
-              </div>
-            </div>
-            
-            {/* Вместо <button className="purchase-main-button" onClick={...}> */}
+
             <div className="bank-actions">
               <button className="bank-action-btn transfer" onClick={handleTransfer}>
                 💸 Перевести
@@ -752,20 +818,44 @@ useEffect(() => {
                 🏦 Вклад
               </button>
             </div>
+          </>
+        ) : (
+          <>
+            {/* Game Mode */}
+            <Character 
+              level={currentLevel}
+              upgrades={upgrades}
+              mascot={activeMascot?.mascot_id || 'lion'}
+              mascotLevel={activeMascot?.level || 1}
+              onAvatarClick={() => setShowMascotSwitcher(true)}
+              battery={battery}
+              maxBattery={maxBattery}
+            />
+
+            <BalanceCard balance={balance} />
             
-            {/* <button className="bank-nav-button" onClick={() => setShowBankWidget(true)}>
-              🏦 Мои операции (МТБанк)
-            </button> */}
+            <div className="loyalty-section">
+              <span className="loyalty-icon">⭐</span>
+              <span className="loyalty-value">{loyaltyPoints}</span>
+              <span className="loyalty-label">баллов</span>
+            </div>
 
             <button className="game-nav-button" onClick={startGame}>
               🎮 Играть (1 🔋)
             </button>
-            
+
             <button className="shop-nav-button" onClick={() => setCurrentScreen('shop')}>
               🏪 Магазин прокачек
             </button>
+
+            <button className="leaderboard-btn" onClick={() => setShowLeaderboard(true)}>
+              🏆 Лидеры
+            </button>
           </>
-        ) : (
+        )}
+
+        {/* Экран магазина (открывается поверх Game Mode) */}
+        {currentScreen === 'shop' && (
           <UpgradeShop 
             fuel={fuel}
             activeMascot={activeMascot}
@@ -774,7 +864,36 @@ useEffect(() => {
           />
         )}
       </main>
-      
+
+      {/* Нижний бар навигации */}
+      <div className="bottom-nav">
+        <div 
+          className={`nav-item ${mode === 'bank' ? 'active' : ''}`}
+          onClick={() => {
+            setMode('bank')
+            setCurrentScreen('home')
+          }}
+        >
+          <span>🏠</span>
+          <span>Главная</span>
+        </div>
+        <div 
+          className={`nav-item ${mode === 'game' ? 'active' : ''}`}
+          onClick={() => {
+            setMode('game')
+            setCurrentScreen('home')
+          }}
+        >
+          <span>🎮</span>
+          <span>Игра</span>
+        </div>
+        <div className="nav-item" onClick={handleLogout}>
+          <span>🚪</span>
+          <span>Выйти</span>
+        </div>
+      </div>
+
+      {/* Анимация прилёта ресурсов */}
       {showEarned && (
         <div className="earned-toast">
           <span className="earned-amount">+{showEarned.amount}</span>
@@ -782,7 +901,8 @@ useEffect(() => {
           <span className="earned-category">{showEarned.category}</span>
         </div>
       )}
-      
+
+      {/* Модалки */}
       {showPurchaseModal && (
         <div className="modal-overlay" onClick={() => setShowPurchaseModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -836,7 +956,7 @@ useEffect(() => {
           </div>
         </div>
       )}
-      
+
       {showBankWidget && (
         <BankWidget 
           transactions={bankTransactions}
@@ -860,6 +980,10 @@ useEffect(() => {
           onGameEnd={handleGameEnd}
           onClose={() => setShowGame(false)}
         />
+      )}
+
+      {showLeaderboard && (
+        <Leaderboard onClose={() => setShowLeaderboard(false)} />
       )}
     </div>
   )

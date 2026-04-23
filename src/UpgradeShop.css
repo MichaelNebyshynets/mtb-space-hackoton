@@ -43,6 +43,10 @@
   border-radius: 20px;
   margin-bottom: 16px;
   border-left: 4px solid;
+
+  background: #FFFFFF;
+  border: 1px solid rgba(27, 42, 75, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
 }
 
 .mascot-shop-icon {

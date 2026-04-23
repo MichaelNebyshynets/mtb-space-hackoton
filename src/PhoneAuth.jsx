@@ -9,8 +9,9 @@ function PhoneAuth({ onLogin }) {
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [selectedMascot, setSelectedMascot] = useState('lion')
+  // const [selectedMascot, setSelectedMascot] = useState('lion')
   const [tempUser, setTempUser] = useState(null)
+  const [username, setUsername] = useState('')
 
   const formatPhone = (value) => {
     let cleaned = value.replace(/[^\d+]/g, '')
@@ -41,7 +42,6 @@ function PhoneAuth({ onLogin }) {
     setError('')
     const formattedPhone = formatPhone(phone)
     
-    // Генерируем UUID из номера
     const generateUUID = (phone) => {
       const hash = phone.split('').reduce((acc, char) => {
         return ((acc << 5) - acc) + char.charCodeAt(0) | 0
@@ -63,31 +63,40 @@ function PhoneAuth({ onLogin }) {
       .maybeSingle()
 
     if (existingUser) {
+      // Уже зарегистрирован — сразу входим
       onLogin(fakeUser)
     } else {
+      // Новый — идём на ввод имени
       setTempUser(fakeUser)
-      setStep('mascot')
+      setStep('name')
     }
   }
 
   // Завершить регистрацию
   const handleComplete = async () => {
+    if (!username.trim()) {
+      setError('Введи имя')
+      return
+    }
+    
     setLoading(true)
     setError('')
 
     try {
       const formattedPhone = formatPhone(phone)
       
-      // Создаём пользователя
+      // Создаём пользователя с НОВЫМИ полями
       const { data: newUser, error: userError } = await supabase
         .from('users')
         .insert({
           id: tempUser.id,
           phone: formattedPhone,
-          mascot: selectedMascot,
-          fuel: 100,
-          hunger: 100,
-          activity: 100,
+          username: username,  // ← имя
+          mascot: 'lion',
+          balance: 1247.50,      // ← вместо fuel
+          battery: 5,            // ← вместо hunger
+          max_battery: 5,
+          loyalty_points: 420,   // ← вместо activity
           last_seen: new Date()
         })
         .select()
@@ -103,7 +112,8 @@ function PhoneAuth({ onLogin }) {
           mascot_id: mascotId,
           level: 1,
           experience: 0,
-          is_active: mascotId === selectedMascot,
+          high_score: 0,         // ← добавили рекорд
+          is_active: mascotId === 'lion',
           unlocked_abilities: []
         })
       }
@@ -120,19 +130,26 @@ function PhoneAuth({ onLogin }) {
     if (step === 'code') {
       setStep('phone')
       setCode('')
-    } else if (step === 'mascot') {
+    } else if (step === 'name') {
       setStep('code')
     }
     setError('')
   }
 
-  // Экран выбора маскота
-  if (step === 'mascot') {
+
+  if (step === 'name') {
     return (
       <div className="auth-container">
-        <div className="auth-card auth-card-wide">
+        <div className="auth-card">
           <h2>🚀 MTB Space Station</h2>
-          <MascotPicker selected={selectedMascot} onSelect={setSelectedMascot} />
+          <h3>Как тебя зовут?</h3>
+          <input
+            type="text"
+            placeholder="Твоё имя"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            autoFocus
+          />
           {error && <p className="auth-error">{error}</p>}
           <button className="auth-btn" onClick={handleComplete} disabled={loading}>
             {loading ? 'Создание...' : 'Начать игру'}
@@ -142,6 +159,23 @@ function PhoneAuth({ onLogin }) {
       </div>
     )
   }
+
+  // Экран выбора маскота
+  // if (step === 'mascot') {
+  //   return (
+  //     <div className="auth-container">
+  //       <div className="auth-card auth-card-wide">
+  //         <h2>🚀 MTB Space Station</h2>
+  //         <MascotPicker selected={selectedMascot} onSelect={setSelectedMascot} />
+  //         {error && <p className="auth-error">{error}</p>}
+  //         <button className="auth-btn" onClick={handleComplete} disabled={loading}>
+  //           {loading ? 'Создание...' : 'Начать игру'}
+  //         </button>
+  //         <button className="auth-back" onClick={handleBack}>← Назад</button>
+  //       </div>
+  //     </div>
+  //   )
+  // }
 
   // Экран ввода телефона / кода
   return (

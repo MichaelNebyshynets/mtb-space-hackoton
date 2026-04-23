@@ -1,0 +1,61 @@
+.leaderboard-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(10, 25, 41, 0.9);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+}
+
+.leaderboard {
+  background: #132F4C;
+  border-radius: 28px;
+  padding: 24px;
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+}
+
+.leaderboard h2 {
+  color: white;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.leaderboard-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 16px;
+  color: white;
+}
+
+.rank {
+  font-weight: bold;
+  color: #FF6B00;
+  min-width: 40px;
+}
+
+.name {
+  flex: 1;
+}
+
+.mascot {
+  color: #B0C4DE;
+  font-size: 12px;
+}
+
+.score {
+  font-weight: bold;
+  color: #1E88E5;
+}
