@@ -27,7 +27,7 @@ const mascotAssets = {
     2: '/mascots/eagle-level-2.png',
     3: '/mascots/eagle-level-3.png',
   },
-  bison: {
+  bear: {
     1: '/mascots/bear-level-1.png',
     2: '/mascots/bear-level-2.png',
     3: '/mascots/bear-level-3.png',
