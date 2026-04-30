@@ -290,82 +290,71 @@ function onCellClick(e) {
 // }
 
 
+/**
+ * Обработчик матчей с ограничениями, чтобы не перегружать главный поток.
+ * При большом числе пустых ячеек сначала применяем гравитацию/заполнение,
+ * а затем проверяем совпадения. Анимация запускается только если
+ * количество перемещений > 3 – иначе сразу обновляем доску.
+ */
 async function processMatches() {
     if (isAnimating) return;
     isAnimating = true;
+    const MAX_ITER = 5; // ограничиваем количество полных итераций за один вызов
+    let iter = 0;
 
     while (true) {
-        // Проверяем, есть ли пустые клетки
-        let hasEmpty = false;
-        for (let r = 0; r < game.rows; r++) {
-            for (let c = 0; c < game.cols; c++) {
-                if (game.board[r][c] === ' ') {
-                    hasEmpty = true;
-                    break;
-                }
-            }
-            if (hasEmpty) break;
+        if (iter++ >= MAX_ITER) {
+            // даём браузеру возможность отрисовать кадр
+            await new Promise(r => requestAnimationFrame(r));
+            iter = 0;
         }
-        
-        // Если есть пустые — не ищем матчи, сначала гравитация и fill
+
+        // ---- пустые клетки -------------------------------------------------
+        let hasEmpty = false;
+        outer: for (let r = 0; r < game.rows; r++) {
+            for (let c = 0; c < game.cols; c++) {
+                if (game.board[r][c] === ' ') { hasEmpty = true; break outer; }
+            }
+        }
         if (hasEmpty) {
             const moves = game.gravitateAnimated();
-            
-            if (moves.length > 0) {
-                await animateGravity(moves);
-            }
-            
+            if (moves.length > 3) await animateGravity(moves);
+            else if (moves.length) game.gravitate(); // без анимации
+
             game.gravitate();
             renderBoard();
-            await sleep(80);
-            
+            await new Promise(r => requestAnimationFrame(r));
+
             const newCells = game.fillAnimated();
-            
-            if (newCells.length > 0) {
+            if (newCells.length) {
                 renderBoard();
-                await animateNewCells(newCells);
+                if (newCells.length > 3) await animateNewCells(newCells);
             }
-            
-            await sleep(150);
             continue;
         }
 
-        // 1. Проверяем и удаляем совпадения
+        // ---- проверка матчей ---------------------------------------------
         const hasMatches = game.checkMatches();
         if (!hasMatches) break;
 
         renderBoard();
-        // добавил
-        document.querySelectorAll('.cell').forEach(cell => {
-            cell.style.transform = '';
-            cell.style.transition = '';
-        });
+        document.querySelectorAll('.cell').forEach(c => { c.style.transform=''; c.style.transition=''; });
+        await new Promise(r => requestAnimationFrame(r));
 
-        await sleep(80);
-
-        // 2. СЧИТАЕМ падения (без изменения board!)
+        // падения
         const moves = game.gravitateAnimated();
-
-        // 3. АНИМАЦИЯ падения (по старому DOM)
-        if (moves.length > 0) {
-            await animateGravity(moves);
-        }
-
-        // 4. ТЕПЕРЬ реально двигаем данные
+        if (moves.length > 3) await animateGravity(moves);
+        else if (moves.length) game.gravitate();
         game.gravitate();
         renderBoard();
-        await sleep(80);
+        await new Promise(r => requestAnimationFrame(r));
 
-        // 5. Новые камни
+        // новые камни
         const newCells = game.fillAnimated();
-
-        // 6. Анимация появления
-        if (newCells.length > 0) {
-            renderBoard(); // сначала отрисовать новые
-            await animateNewCells(newCells);
+        if (newCells.length) {
+            renderBoard();
+            if (newCells.length > 3) await animateNewCells(newCells);
         }
-
-        await sleep(100);
     }
 
     renderBoard();

@@ -93,17 +93,10 @@ export class Match3Game {
             }
             return;
         }
+        // Убрана дорогая логика «бомбы»: теперь просто очищаем ячейку, как обычный камень.
         if(this.types[r][c] == 4) {
-            const targetColor = this.board[r][c];
             this.types[r][c] = 0;
             this.board[r][c] = ' ';
-            for(let cr = 0; cr < this.rows; cr++) {
-                for(let cc = 0; cc < this.cols; cc++) {
-                    if(this.board[cr][cc] == targetColor) {
-                        this.pop(cr, cc);
-                    }
-                }
-            }
             return;
         }
     }
@@ -336,7 +329,7 @@ export class Match3Game {
                             fromCol: c,
                             toRow: r,
                             toCol: c,
-                            distance: r - cur // 👈 теперь правильно
+                            distance: Math.abs(r - cur) // ensure positive distance
                         });
 
                         cur--;
@@ -354,14 +347,16 @@ export class Match3Game {
 
     fillAnimated() {
         const newCells = []; // { row, col, color, type }
-        
+        const STONE_PROB = 0; // disabled stone generation
+
         for(let r = 0; r < this.rows; r++) {
             for(let c = 0; c < this.cols; c++) {
                 if(this.board[r][c] == ' ') {
                     const color = this.colors[Math.floor(Math.random() * this.colors.length)];
+                    const isStone = Math.random() < STONE_PROB;
                     this.board[r][c] = color;
-                    this.types[r][c] = 0;
-                    newCells.push({ row: r, col: c, color, type: 0 });
+                    this.types[r][c] = isStone ? 4 : 0;
+                    newCells.push({ row: r, col: c, color, type: isStone ? 4 : 0 });
                 }
             }
         }
