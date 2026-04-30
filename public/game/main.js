@@ -230,7 +230,9 @@ function onCellClick(e) {
     
     // Если активна способность
     if (activeAbility) {
+        // При активной способности отменяем обычный обмен ячейками
         useAbility(row, col);
+        selectedCell = null; // сбрасываем выбранную ячейку
         return;
     }
 
