@@ -79,35 +79,41 @@ function onTouchMove(e) {
 }
 
 function onTouchEnd(e) {
+    // Если касание не началось или игра уже закончена — выходим
     if (!touchStart || game.isLosed() || isAnimating) return;
-    
+
     const touch = e.changedTouches[0];
-    const touchEnd = {
-        x: touch.clientX,
-        y: touch.clientY
-    };
-    
+    const touchEnd = { x: touch.clientX, y: touch.clientY };
+
     const dx = touchEnd.x - touchStart.x;
     const dy = touchEnd.y - touchStart.y;
-    
+
     let newRow = touchStart.row;
     let newCol = touchStart.col;
-    
+
     if (Math.abs(dx) > Math.abs(dy)) {
         newCol += dx > 0 ? 1 : -1;
     } else {
         newRow += dy > 0 ? 1 : -1;
     }
-    
+
+    // Если включена способность – сразу её используем, без попытки swap
+    if (activeAbility) {
+        useAbility(touchStart.row, touchStart.col);
+        selectedCell = null; // сбрасываем выбранную ячейку
+        touchStart = null;
+        return;
+    }
+
+    // Убираем визуальное выделение всех ячеек
     document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'));
-    
+
+    // Обычный обмен камнями (если координаты в пределах доски)
     if (newRow >= 0 && newRow < 6 && newCol >= 0 && newCol < 6) {
         const success = game.makeMove(touchStart.row, touchStart.col, newRow, newCol);
-        if (success) {
-            processMatches();
-        }
+        if (success) processMatches();
     }
-    
+
     touchStart = null;
 }
 
